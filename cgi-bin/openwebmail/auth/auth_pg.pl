@@ -181,7 +181,7 @@ sub change_userpassword {
       return(-3, "PgSQL server $PgHost connect error");
    my $qpasswd = pg_quote_literal($passwd);
    my $quser = pg_quote_literal($user);
-   $DB->exec("update users set upass=$qpasswd where uname=$quser");
+   $DB->exec("update users set upass=$qpasswd where uname=$quser") or
       return(-3, "PgSQL server $PgHost exec error");
    undef($DB);
 
