@@ -41,12 +41,12 @@
           <tmpl_if is_subject>
             <tmpl_if ignore>
               <tmpl_unless is_tag>
-                <tmpl_var displayword escape="none">
+                <tmpl_var displayword escape="html">
               </tmpl_unless>
             <tmpl_else>
               <tmpl_if misspelled>
                 <tmpl_if alreadychecked>
-                  <span class="alreadychecked"><tmpl_var displayword escape="none"></span>
+                  <span class="alreadychecked"><tmpl_var displayword escape="html"></span>
                 <tmpl_else>
                   <tmpl_if manualfix>
                     <input class="misspelled" type="text" size="<tmpl_var manualwordlength escape="html">" name="<tmpl_var wordnumber escape="html">" value="<tmpl_var manualword escape="html">">
@@ -62,7 +62,7 @@
                   </tmpl_if>
                 </tmpl_if>
               <tmpl_else>
-                <tmpl_var displayword escape="none">
+                <tmpl_var displayword escape="html">
               </tmpl_if>
             </tmpl_if>
           </tmpl_if>
@@ -81,12 +81,12 @@
           <tmpl_unless is_subject>
             <tmpl_if ignore>
               <tmpl_unless is_tag>
-                <tmpl_var displayword escape="none">
+                <tmpl_var displayword escape="html">
               </tmpl_unless>
             <tmpl_else>
               <tmpl_if misspelled>
                 <tmpl_if alreadychecked>
-                  <span class="alreadychecked"><tmpl_var displayword escape="none"></span>
+                  <span class="alreadychecked"><tmpl_var displayword escape="html"></span>
                 <tmpl_else>
                   <tmpl_if manualfix>
                     <input class="misspelled" type="text" size="<tmpl_var manualwordlength escape="html">" name="<tmpl_var wordnumber escape="html">" value="<tmpl_var manualword escape="html">">
@@ -102,7 +102,7 @@
                   </tmpl_if>
                 </tmpl_if>
               <tmpl_else>
-                <tmpl_var displayword escape="none">
+                <tmpl_var displayword escape="html">
               </tmpl_if>
             </tmpl_if>
           </tmpl_unless>

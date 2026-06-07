@@ -192,7 +192,7 @@ sub text2words {
    my $dictionary = param('dictionary') || $prefs{dictionary} || 'english';
 
    $dictionary =~ s#\.\.+##g;
-   $dictionary =~ s#[^A-Za-z0-9\.]##;
+   $dictionary =~ s#[^A-Za-z0-9.]##g;
 
    my $dicletters = exists $dictionary_letters{$dictionary} ? $dictionary_letters{$dictionary} : $dictionary_letters{english};
 
@@ -318,7 +318,7 @@ sub spellcheck_words {
    my $dictionary = param('dictionary') || $prefs{dictionary} || 'english';
 
    $dictionary =~ s#\.\.+##g;
-   $dictionary =~ s#[^A-Za-z0-9\.]##;
+   $dictionary =~ s#[^A-Za-z0-9.]##g;
 
    # get the personal dictionary name
    my $personaldictionaryname = $config{spellcheck_pdicname};
@@ -502,7 +502,7 @@ sub spellcheckform {
    my $dictionary = param('dictionary') || $prefs{dictionary} || 'english';
 
    $dictionary =~ s#\.\.+##g;
-   $dictionary =~ s#[^A-Za-z0-9\.]##;
+   $dictionary =~ s#[^A-Za-z0-9.]##g;
 
    # modify the word for display
    # preserve the formatting of the original message as closely as possible
@@ -591,7 +591,7 @@ sub editpdict {
    my $dictionary      = param('dictionary') || $prefs{dictionary} || 'english';
 
    $dictionary =~ s#\.\.+##g;
-   $dictionary =~ s#[^A-Za-z0-9\.]##;
+   $dictionary =~ s#[^A-Za-z0-9.]##g;
 
    # use same personal dictionary file path as the spellchecker default
    my $personaldictionaryname = $config{spellcheck_pdicname};
