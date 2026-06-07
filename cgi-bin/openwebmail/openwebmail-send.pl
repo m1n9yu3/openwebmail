@@ -2079,7 +2079,7 @@ sub sendmessage {
          my $auth = $smtp->supports("AUTH");
          unless ($smtp->auth($config{smtpauth_username}, $config{smtpauth_password})) {
             $senderr++;
-            $senderrstr = gettext('Network server error:') . "<br>($smtpserver - " . $smtp->message . ")";
+            $senderrstr = gettext('Network server error:') . "<br>(" . ow::htmltext::str2html($smtpserver) . " - " . ow::htmltext::str2html($smtp->message) . ")";
             my $m = "send message error - SMTP server $smtpserver error - " . $smtp->message;
             writelog($m);
             writehistory($m);
@@ -2099,7 +2099,7 @@ sub sendmessage {
 
            $senderrstr = gettext('Message send aborted due to the following bad recipient addresses:')
                          . ' ' .
-                         join(', ', grep { !exists $ok_addresses{$_} } keys %recipient_addresses)
+                         join(', ', map { ow::htmltext::str2html($_) } grep { !exists $ok_addresses{$_} } keys %recipient_addresses)
                          . '. ' .
                          gettext('A copy of the message has been saved to your drafts folder.');
          };
