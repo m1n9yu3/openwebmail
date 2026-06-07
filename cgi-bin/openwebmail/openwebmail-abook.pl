@@ -1454,6 +1454,7 @@ sub addrbookdelete {
    my $targetbook = param('targetbook') || '';
 
    $abookfolder  = ow::tool::untaint(safefoldername($targetbook));
+   validate_manageable_abookfolder($abookfolder);
    return if $abookfolder eq '';
 
    my $abookfile = abookfolder2file($abookfolder);
@@ -1487,6 +1488,7 @@ sub addrbookrename {
    my $abookfilenew = abookfolder2file($abookfoldernew);
 
    $abookfolder  = ow::tool::untaint(safefoldername($targetbook));
+   validate_manageable_abookfolder($abookfolder);
    my $abookfile = abookfolder2file($abookfolder);
 
    openwebmailerror(gettext('The addressbook folder name already exists:') . ' ' . f2u($abookfoldernew))
@@ -3050,6 +3052,18 @@ sub validate_writable_abookfolder {
    my %writable = map { $_ => 1 } get_writable_abookfolders();
    openwebmailerror(gettext('The addressbook folder is read-only:') . " $abookfoldername")
       unless defined $abookfoldername && exists $writable{$abookfoldername};
+}
+
+sub validate_manageable_abookfolder {
+   my $abookfoldername = shift;
+
+   my %userbooks = map { $_ => 1 } get_user_abookfolders();
+   openwebmailerror(gettext('The addressbook folder is read-only:') . " $abookfoldername")
+      unless defined $abookfoldername
+             && $abookfoldername ne ''
+             && is_safefoldername($abookfoldername)
+             && !is_defaultabookfolder($abookfoldername)
+             && exists $userbooks{$abookfoldername};
 }
 
 sub validate_new_abookfolder {
