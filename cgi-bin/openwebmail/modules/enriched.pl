@@ -17,6 +17,7 @@ sub enriched2html {
    $t =~ s#<nofill>(.*?)</nofill>#_enriched_nofill_save($1)#igems;
 
    $t =~ s#<<#&lt;#g;
+   $t =~ s#<(?!/?(?:bold|italic|underline|fixed|excerpt|bigger|smaller|flushright|flushleft|flushboth|indentright|indent|color|fontfamily|paraindent|param|nofill)\s*>)[^>]*>#_escape_html($&)#ige;
 
    $t =~ s#\n(\n*)# $1#sg;
    $t =~ s#\n#<br>\n#sg;
@@ -48,7 +49,7 @@ sub enriched2html {
    $t =~ s#</indent>#</dl>#ig;
 
    $t =~ s#<color>\s*<param>(.*?)</param>(.*?)</color>#_enriched_color_string($1, $2)#igems;
-   $t =~ s#<fontfamily>\s*<param>(.*?)</param>(.*?)</fontfamily>#<font face="$1">$2</font>#igs;
+   $t =~ s#<fontfamily>\s*<param>(.*?)</param>(.*?)</fontfamily>#_enriched_fontfamily_string($1, $2)#igems;
    $t =~ s#<paraindent>\s*<param>\s*left\s*</param>(.*?)</paraindent>#<dl><dd>$1</dl>#igs;
 
    $t =~ s#</?paraindent>##igs;
@@ -66,7 +67,7 @@ sub enriched2html {
 }
 
 sub _enriched_nofill_save {
-   $nofill_list[$nofill_i] = shift;
+   $nofill_list[$nofill_i] = _escape_html(shift);
    $nofill_i++;
    return('NOFILL_' . ($nofill_i-1));
 }
@@ -78,7 +79,31 @@ sub _enriched_nofill_restore {
 sub _enriched_color_string {
    my ($color, $string) = @_;
    $color = "#$1$2$3" if ($color =~ m/([0-9a-f][0-9a-f])[0-9a-f][0-9a-f]\s*,\s*([0-9a-f][0-9a-f])[0-9a-f][0-9a-f]\s*,\s*([0-9a-f][0-9a-f])[0-9a-f][0-9a-f]/i);
+   $color = _escape_html_attr($color);
    return(qq|<font color="$color">$string</font>|);
+}
+
+sub _enriched_fontfamily_string {
+   my ($fontfamily, $string) = @_;
+   $fontfamily = _escape_html_attr($fontfamily);
+   return(qq|<font face="$fontfamily">$string</font>|);
+}
+
+sub _escape_html {
+   my $text = shift || '';
+
+   $text =~ s/&/&amp;/g;
+   $text =~ s/</&lt;/g;
+   $text =~ s/>/&gt;/g;
+   return $text;
+}
+
+sub _escape_html_attr {
+   my $text = _escape_html(shift);
+
+   $text =~ s/"/&quot;/g;
+   $text =~ s/'/&#39;/g;
+   return $text;
 }
 
 1;
