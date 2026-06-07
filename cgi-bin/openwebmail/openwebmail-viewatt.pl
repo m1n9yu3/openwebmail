@@ -189,6 +189,7 @@ sub getattachment {
       # return whole message as an message/rfc822 object
       my ($subject) = iconv($convfrom, $prefs{charset}, $attr[$_SUBJECT]);
       $subject =~ s/\s+/_/g;
+      $subject = safedlname($subject);
 
       my $length    = length($block);
       my $attheader = qq|Content-Length: $length\n|.
@@ -385,6 +386,7 @@ sub getattfile {
 
    ($att{filename}, $att{filenamecharset}) =
       ow::mailparse::get_filename_charset($att{'content-type'}, $att{'content-disposition'});
+   $att{filename} = safedlname($att{filename});
 
    $attcontent = ow::mime::decode_content($attcontent, $att{'content-transfer-encoding'});
 
@@ -509,4 +511,3 @@ sub msword2html {
 
    return 1;
 }
-
