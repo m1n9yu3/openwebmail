@@ -6,6 +6,8 @@ package ow::spamcheck;
 use strict;
 use warnings FATAL => 'all';
 
+use Text::ParseWords qw(shellwords);
+
 require "modules/tool.pl";
 require "modules/suid.pl";
 
@@ -126,7 +128,16 @@ sub pipecmd_msg {
 
 sub _pipecmd_msg {
    my ($pipecmd, $r_message, $outfile, $errfile) = @_;
-   open(P, "|$pipecmd 2>$errfile >$outfile") or return("pipecmd open failed: $!");
+   my @cmd = eval { shellwords($pipecmd) };
+   return("pipecmd parse failed: $@") if $@;
+   return("pipecmd is empty") if !@cmd;
+
+   open(P, "|-") or do {
+      open(STDERR, ">", $errfile);
+      open(STDOUT, ">", $outfile);
+      exec(@cmd);
+      exit 9;
+   };
    if (ref($r_message) eq 'ARRAY') {
       print P @{$r_message} or return("print array to pipe failed: $!\n");
    } else {
