@@ -660,7 +660,7 @@ sub downloadfolder {
       sysopen(T, $folderfile, O_RDONLY) or writelog("cannot open file $folderfile");
    }
 
-   $filename =~ s/\s+/_/g;
+   $filename = safedlname($filename);
 
    # disposition:attachment default to save
    print qq|Connection: close\n| .

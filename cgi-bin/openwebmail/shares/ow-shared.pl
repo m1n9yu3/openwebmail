@@ -2581,6 +2581,9 @@ sub get_folderpath_folderdb {
    } elsif ($foldername eq 'DELETE') {
       $folderfile = $folderdb = '';
    } else {
+      openwebmailerror(gettext('Illegal characters in folder name:') . " $foldername")
+         unless is_safefoldername($foldername);
+
       $folderdb = $foldername;
       $folderdb =~ s!/!#!g;
       $folderdb = dotpath('db') . "/$folderdb";
