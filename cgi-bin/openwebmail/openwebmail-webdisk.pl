@@ -2573,11 +2573,7 @@ sub filelist_of_search {
 
          if ($wdsearchtype eq 'filename') {
             # search wdkeyword in file name
-            if (ow::tool::is_safe_regex($wdkeyword_fs)) {
-               push(@{$r_list}, $fname) if $fname =~ m/$wdkeyword_fs/i;
-            } else {
-               push(@{$r_list}, $fname) if $fname =~ m/\Q$wdkeyword_fs\E/i;
-            }
+            push(@{$r_list}, $fname) if webdisk_keyword_match($fname, $wdkeyword_fs);
          } else {
             # search wdkeyword in file content
             next unless -f "$webdiskrootdir/$vpath/$fname";
@@ -2601,7 +2597,7 @@ sub filelist_of_search {
 
                $stdout = (iconv('utf-8', $prefs{charset}, $stdout))[0];
 
-               push(@{$r_list}, $fname) if $stdout =~ m/$wdkeyword_utf8/i;
+               push(@{$r_list}, $fname) if webdisk_keyword_match($stdout, $wdkeyword_utf8);
             } elsif ($contenttype =~ m/text/ || $ext eq '') {
                # only read leading 4MB
                my $buff = '';
@@ -2614,7 +2610,7 @@ sub filelist_of_search {
                close(F) or
                   openwebmailerror(gettext('Cannot open file:') . " $webdiskrootdir/$vpathstr/$fname ($!)");
 
-               push(@{$r_list}, $fname) if $buff =~ m/$wdkeyword_fs/i;
+               push(@{$r_list}, $fname) if webdisk_keyword_match($buff, $wdkeyword_fs);
             }
          }
       }
@@ -2646,6 +2642,13 @@ sub filelist_of_search {
       openwebmailerror(gettext('Cannot unlock file:') . " $cachefile");
 
    return undef;
+}
+
+sub webdisk_keyword_match {
+   my ($text, $keyword) = @_;
+
+   return $text =~ m/$keyword/i if ow::tool::is_safe_regex($keyword);
+   return $text =~ m/\Q$keyword\E/i;
 }
 
 sub webdisk_execute {
