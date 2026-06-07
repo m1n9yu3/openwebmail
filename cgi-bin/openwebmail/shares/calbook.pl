@@ -75,7 +75,7 @@ sub readcalbook {
                               string        => $a[4],
                               link          => $a[5],
                               email         => $a[6],
-                              eventcolor    => $a[7] || 'none',
+                              eventcolor    => is_safecalendareventcolor($a[7]) ? $a[7] : 'none',
                               charset       => $a[8] || '',
                               eventreminder => $a[9],
                            };
@@ -145,6 +145,13 @@ sub writecalbook {
       openwebmailerror(gettext('Cannot unlock file:') . " $calbook ($!)");
 
    return $written;
+}
+
+sub is_safecalendareventcolor {
+   my $eventcolor = shift;
+
+   return 0 unless defined $eventcolor;
+   return $eventcolor =~ m/^(?:[12][a-f]|none)$/ ? 1 : 0;
 }
 
 1;

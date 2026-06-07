@@ -101,7 +101,7 @@
     <tr>
       <tmpl_loop columns>
       <tmpl_unless skip>
-      <td class="<tmpl_if eventtxt>eventcolor<tmpl_var eventcolor><tmpl_else><tmpl_if rowdark>rowdark<tmpl_else>rowlight</tmpl_if></tmpl_if>" rowspan="<tmpl_var rowspan>" colspan="<tmpl_var colspan>"<tmpl_if eventtxt>valign="top"<tmpl_else>
+      <td class="<tmpl_if eventtxt>eventcolor<tmpl_var eventcolor escape="html"><tmpl_else><tmpl_if rowdark>rowdark<tmpl_else>rowlight</tmpl_if></tmpl_if>" rowspan="<tmpl_var rowspan>" colspan="<tmpl_var colspan>"<tmpl_if eventtxt>valign="top"<tmpl_else>
           <tmpl_if timelabel>
             <tmpl_if is_timelabel_weekday>width="98%" align="center"</tmpl_if>
             <tmpl_if is_timelabel_allday>width="2%" align="center" nowrap</tmpl_if>

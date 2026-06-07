@@ -1852,6 +1852,8 @@ sub addmod {
    my $eventreminder   = param('eventreminder')   || 0;
    my $cal_caller      = param('cal_caller')      || $prefs{calendar_defaultview};
 
+   $eventcolor = 'none' unless is_safecalendareventcolor($eventcolor);
+
    if ($string !~ m/^\s*$/) {
       # check for input that would corrupt our @@@ separated flatfile database format
       openwebmailerror(gettext('The @@@ character sequence is not allowed in event strings or links.'))
