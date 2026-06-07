@@ -1139,6 +1139,7 @@ sub addrmovecopydelete {
    my $targetfile = '';
    my $targetbook = '';
    if ($targetfolder ne 'DELETE') {
+      validate_writable_abookfolder($targetfolder);
       $targetfile = abookfolder2file($targetfolder);
 
       openwebmailerror(gettext('The addressbook does not exist:') . ' ' . f2u($targetfolder)) if !-f $targetfile;
@@ -3037,9 +3038,15 @@ sub validate_importdestination {
 
    return if $importdestination eq 'newaddressbook';
 
+   validate_writable_abookfolder($importdestination);
+}
+
+sub validate_writable_abookfolder {
+   my $abookfoldername = shift;
+
    my %writable = map { $_ => 1 } get_writable_abookfolders();
-   openwebmailerror(gettext('The addressbook folder is read-only:') . " $importdestination")
-      unless exists $writable{$importdestination};
+   openwebmailerror(gettext('The addressbook folder is read-only:') . " $abookfoldername")
+      unless defined $abookfoldername && exists $writable{$abookfoldername};
 }
 
 sub validate_new_abookfolder {
