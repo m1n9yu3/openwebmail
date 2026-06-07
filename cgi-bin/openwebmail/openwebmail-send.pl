@@ -204,10 +204,12 @@ sub compose {
            ) unless $from;
 
    # make sure we have a messageid for the message we're composing
-   $mymessageid = generate_messageid((ow::tool::email2nameaddr($from))[1]) unless $mymessageid;
+   $mymessageid = generate_messageid((ow::tool::email2nameaddr($from))[1]) unless is_safemessageid($mymessageid);
 
    # we prefer to use the messageid in a draft message if available
    $mymessageid = $messageid if $composetype eq 'editdraft' && $messageid;
+
+   $mymessageid = generate_messageid((ow::tool::email2nameaddr($from))[1]) unless is_safemessageid($mymessageid);
 
    # generate a unique id for all attachments belonging to this message, based on the messageid of this message
    my $attachments_uid = length $mymessageid > 22 ? substr($mymessageid,0,22) : $mymessageid;
@@ -1902,7 +1904,7 @@ sub sendmessage {
    my $date = ow::datetime::dateserial2datefield($dateserial, $prefs{timeoffset}, $prefs{daylightsaving}, $prefs{timezone});
 
    # make sure we have a messageid for the message we're composing
-   $mymessageid = generate_messageid((ow::tool::email2nameaddr($from))[1]) unless $mymessageid;
+   $mymessageid = generate_messageid((ow::tool::email2nameaddr($from))[1]) unless is_safemessageid($mymessageid);
 
    # generate a unique id for all attachments belonging to this message, based on the messageid of this message
    my $attachments_uid = length $mymessageid > 22 ? substr($mymessageid,0,22) : $mymessageid;
@@ -2938,6 +2940,13 @@ sub sanitize_mail_header_value {
    $value =~ s/\s+$//;
 
    return $value;
+}
+
+sub is_safemessageid {
+   my $messageid = shift;
+   return 0 unless defined $messageid;
+
+   return $messageid =~ m/\A<[^\r\n\x00-\x1F\x7F<>\s\@]+\@[^\r\n\x00-\x1F\x7F<>\s\@]+>\z/ ? 1 : 0;
 }
 
 sub sanitize_mime_content_type {
