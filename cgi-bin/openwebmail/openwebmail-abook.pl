@@ -1426,7 +1426,7 @@ sub addrbookadd {
    $abookfoldernew = u2f(ow::tool::untaint(safefoldername($abookfoldernew)));
 
    openwebmailerror(gettext('Illegal characters in folder name:') . ' ' . f2u($abookfoldernew))
-     unless is_safefoldername($abookfoldernew);
+     unless is_safeabookfoldername($abookfoldernew);
 
    return if $abookfoldernew eq '';
 
@@ -1481,7 +1481,7 @@ sub addrbookrename {
    $abookfoldernew = u2f(ow::tool::untaint(safefoldername($abookfoldernew)));
 
    openwebmailerror(gettext('Illegal characters in folder name:') . ' ' . f2u($abookfoldernew))
-     unless is_safefoldername($abookfoldernew);
+     unless is_safeabookfoldername($abookfoldernew);
 
    return if $abookfoldernew eq '';
 
@@ -1543,6 +1543,7 @@ sub addrbookdownload {
    }
 
    $filename =~ s/\s+/_/g;
+   $filename = safedlname($filename);
 
    # disposition:attachment default to save
    print qq|Connection: close\n| .
@@ -3066,11 +3067,20 @@ sub validate_manageable_abookfolder {
              && exists $userbooks{$abookfoldername};
 }
 
+sub is_safeabookfoldername {
+   my $abookfoldername = shift;
+
+   return 0 unless defined $abookfoldername && is_safefoldername($abookfoldername);
+   return 0 if $abookfoldername =~ m/[\r\n\x00-\x1F\x7F"\\]/;
+
+   return 1;
+}
+
 sub validate_new_abookfolder {
    my $abookfoldername = shift;
 
    openwebmailerror(gettext('Illegal characters in folder name:') . ' ' . f2u($abookfoldername))
-      unless defined $abookfoldername && is_safefoldername($abookfoldername);
+      unless is_safeabookfoldername($abookfoldername);
 
    openwebmailerror(gettext('The addressbook folder name already exists:') . ' ' . f2u($abookfoldername))
       if is_defaultabookfolder($abookfoldername);
