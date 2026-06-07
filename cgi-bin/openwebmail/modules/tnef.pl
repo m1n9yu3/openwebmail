@@ -20,6 +20,105 @@ use Fcntl qw(:DEFAULT :flock);
 require "modules/tool.pl";
 require "modules/suid.pl";
 
+sub _safe_tnef_member_name {
+   my ($name, $r_used) = @_;
+
+   $name = '' unless defined $name;
+   $name =~ s#\\#/#g;
+   $name =~ s#^.*/##;
+   $name =~ s#^.*:##;
+   $name =~ s/[\x00-\x1F\x7F"\\]/_/g;
+   $name =~ s/^\s+//;
+   $name =~ s/\s+$//;
+   $name =~ s/^\.+$//;
+   $name =~ s/^-/_/;
+   $name = 'attachment' if $name eq '';
+
+   if (length($name) > 128) {
+      my ($base, $ext) = $name =~ m/^(.{1,120}?)(\.[^.]*)?$/;
+      $name = $base . (defined $ext ? substr($ext, 0, 8) : '');
+   }
+
+   my $candidate = $name;
+   my $i = 1;
+   while ($r_used->{$candidate}) {
+      my ($base, $ext) = $name =~ m/^(.+?)(\.[^.]*)?$/;
+      $candidate = $base . '-' . $i++ . (defined $ext ? $ext : '');
+   }
+
+   $r_used->{$candidate} = 1;
+   return $candidate;
+}
+
+sub _copy_regular_file {
+   my ($src, $dst) = @_;
+
+   return 0 if -l $src || !-f $src;
+
+   sysopen(my $in, $src, O_RDONLY) or return 0;
+   sysopen(my $out, $dst, O_WRONLY|O_TRUNC|O_CREAT) or do {
+      close($in);
+      return 0;
+   };
+
+   binmode($in);
+   binmode($out);
+
+   my $buf = '';
+   while (read($in, $buf, 32768)) {
+      print $out $buf or do {
+         close($in);
+         close($out);
+         return 0;
+      };
+   }
+
+   close($in);
+   close($out);
+   return 1;
+}
+
+sub _stage_tnef_files {
+   my $srcdir = shift;
+
+   my $stagedir = ow::tool::mktmpdir('tnef.safe');
+   return ('') if $stagedir eq '';
+
+   my @dirs = ($srcdir);
+   my %used = ();
+   my @filelist = ();
+
+   while (defined(my $dir = shift @dirs)) {
+      opendir(my $dh, $dir) or next;
+      while (defined(my $entry = readdir($dh))) {
+         next if $entry eq '.' || $entry eq '..';
+
+         my $src = "$dir/$entry";
+         next if -l $src;
+
+         if (-d $src) {
+            push(@dirs, $src);
+            next;
+         }
+
+         next unless -f $src;
+
+         my $dstname = _safe_tnef_member_name($entry, \%used);
+         if (_copy_regular_file($src, "$stagedir/$dstname")) {
+            push(@filelist, $dstname);
+         }
+      }
+      closedir($dh);
+   }
+
+   if (scalar @filelist == 0) {
+      rmdir($stagedir);
+      return ('');
+   }
+
+   return ($stagedir, @filelist);
+}
+
 sub get_tnef_filelist {
    my ($tnefbin, $r_tnef) = @_;
 
@@ -79,15 +178,14 @@ sub get_tnef_archive {
    close(F);
    umask($oldumask);
 
-   my @filelist = ();
-   opendir(T, $tmpdir);
-   while (defined($_ = readdir(T))) {
-      push(@filelist, $_) if ($_ ne '.' && $_ ne '..');
-   }
-   close(T);
+   my ($stagedir, @filelist) = _stage_tnef_files($tmpdir);
+
+   my $rmbin = ow::tool::findbin('rm');
+   system($rmbin, '-Rf', $tmpdir) if ($rmbin ne '');
+   $tmpdir = $stagedir;
 
    if ($#filelist < 0) {
-      rmdir($tmpdir);
+      rmdir($tmpdir) if $tmpdir ne '';
       return('', \$arcdata);
    } elsif ($#filelist == 0) {
       sysopen(F, "$tmpdir/$filelist[0]", O_RDONLY);
@@ -132,7 +230,6 @@ sub get_tnef_archive {
    $arcdata = <F>;
    close(F);
 
-   my $rmbin = ow::tool::findbin('rm');
    system($rmbin, '-Rf', $tmpdir) if ($rmbin ne '');
    return($arcname, \$arcdata, @filelist);
 }
