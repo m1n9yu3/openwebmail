@@ -37,6 +37,7 @@ use strict;
 use warnings FATAL => 'all';
 
 use Fcntl qw(:DEFAULT :flock);
+use Text::ParseWords qw(shellwords);
 
 require "modules/filelock.pl";
 require "modules/tool.pl";
@@ -303,7 +304,8 @@ sub change_userpassword {
       # local $SIG{CHLD}; undef $SIG{CHLD};	# already done in auth.pl
 
       # update passwd and db with pwdmkdb program
-      if ( system("$passwdmkdb $tmpfile")!=0 ) {
+      my @passwdmkdb_cmd = eval { shellwords($passwdmkdb) };
+      if ($@ || !@passwdmkdb_cmd || system(@passwdmkdb_cmd, $tmpfile) != 0) {
          goto authsys_error;
       }
    } else {
