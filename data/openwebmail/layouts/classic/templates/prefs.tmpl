@@ -20,7 +20,7 @@
 <tr>
   <td nowrap class="titlebar" width="30%">gettext('User Preferences')</td>
   <td nowrap class="titlebar" align="center"><tmpl_if enable_quota><tmpl_if quotashowusage>gettext('Quota Usage:') <tmpl_var quotabytesusage> </tmpl_if><tmpl_if quotaoverthreshold>(<tmpl_var quotapercentusage>%) </tmpl_if><tmpl_else>&nbsp;</tmpl_if></td>
-  <td nowrap class="titlebar" width="30%" align="right"><tmpl_if userrealname><tmpl_var userrealname></tmpl_if>&nbsp;</td>
+  <td nowrap class="titlebar" width="30%" align="right"><tmpl_if userrealname><tmpl_var userrealname escape="html"></tmpl_if>&nbsp;</td>
 </tr>
 <tmpl_unless userfirsttime>
 <tr>
