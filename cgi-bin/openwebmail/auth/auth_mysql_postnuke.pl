@@ -50,10 +50,10 @@ sub get_userinfo {
 
    my $dbh = DBI->connect("dbi:mysql:$auth_db;host=$SQLHost", $sqlusr,$sqlpwd)
       or return(-3, "Cannot connect to db server: ".$DBI::errstr);
-   my $queryStr =qq|select $field_home from $auth_table where strcmp($field_username , '$user')=0|;
+   my $queryStr =qq|select $field_home from $auth_table where strcmp($field_username , ?)=0|;
    my $sth = $dbh->prepare($queryStr)
       or return(-3, "Can't prepare SQL statement: ".$dbh->errstr());
-   $sth->execute
+   $sth->execute($user)
       or return(-3, "Can't execute SQL statement: ".$sth->errstr());
 
    if ($sth->rows eq 0) {
@@ -109,10 +109,10 @@ sub check_userpassword {
 
    my $dbh = DBI->connect("dbi:mysql:$auth_db;host=$SQLHost", $sqlusr,$sqlpwd)
       or return(-3, "Cannot connect to db server: ".$DBI::errstr);
-   my $queryStr = qq|select $field_username, $field_password from $auth_table where strcmp($field_username , '$user')=0|;
+   my $queryStr = qq|select $field_username, $field_password from $auth_table where strcmp($field_username , ?)=0|;
    my $sth = $dbh->prepare($queryStr)
       or return(-3, "Can't prepare SQL statement: ".$dbh->errstr());
-   $sth->execute
+   $sth->execute($user)
       or return(-3, "Can't execute SQL statement: ".$sth->errstr());
 
    if ($sth->rows eq 0) {
@@ -165,10 +165,10 @@ sub change_userpassword {
 
    my $dbh = DBI->connect("dbi:mysql:$auth_db;host=$SQLHost", $sqlusr,$sqlpwd)
       or return(-3, "Cannot connect to db server: ".$DBI::errstr);
-   my $queryStr = qq|update $auth_table set $field_password='$newpassword' where strcmp($field_username , '$user')=0|;
+   my $queryStr = qq|update $auth_table set $field_password=? where strcmp($field_username , ?)=0|;
    my $sth = $dbh->prepare($queryStr)
       or return(-3, "Can't prepare SQL statement: ".$dbh->errstr());
-   $sth->execute
+   $sth->execute($newpassword, $user)
       or return(-3, "Can't execute SQL statement: ".$sth->errstr());
    $dbh->disconnect or return(-3, "Disconnection failed: ".$DBI::errstr);
 
