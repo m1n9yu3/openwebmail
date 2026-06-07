@@ -48,12 +48,13 @@ my %mysql_query=(
 
 ########## end init ##############################################
 
-sub mysql_template_value {
-   my $value = shift;
+sub mysql_apply_template_value {
+   my ($query, $placeholder, $value) = @_;
    $value = '' unless defined $value;
    my $quoted = $main::dbh->quote($value);
-   $quoted =~ s/^'(.*)'$/$1/s;
-   return $quoted;
+   $query =~ s/'\Q$placeholder\E'/$quoted/g;
+   $query =~ s/\Q$placeholder\E/$quoted/g;
+   return $query;
 }
 
 #  0 : ok
@@ -75,15 +76,13 @@ sub get_userinfo {
    my $q;
    if ( $mysql_query{user_homedir} ) {
       $q=$mysql_query{user_homedir};
-      my $sql_user = mysql_template_value($user);
-      my $sql_domain = mysql_template_value($domain);
-      $q=~s/_user_/$sql_user/g; $q=~s/_domain_/$sql_domain/g;
+      $q = mysql_apply_template_value($q, '_user_', $user);
+      $q = mysql_apply_template_value($q, '_domain_', $domain);
       ( $home ) = mysql_command($q);
    }
    $q=$mysql_query{unix_user};
-   my $sql_user = mysql_template_value($user);
-   my $sql_domain = mysql_template_value($domain);
-   $q=~s/_user_/$sql_user/g; $q=~s/_domain_/$sql_domain/g;
+   $q = mysql_apply_template_value($q, '_user_', $user);
+   $q = mysql_apply_template_value($q, '_domain_', $domain);
    ( $unix_user ) = mysql_command($q);
 
    mysql_command("EXIT")==0 or
@@ -128,9 +127,8 @@ sub check_userpassword {
       return(-3, "MySQL connect error");
 
    my $q=$mysql_query{user_password};
-   my $sql_user = mysql_template_value($user);
-   my $sql_domain = mysql_template_value($domain);
-   $q=~s/_user_/$sql_user/g; $q=~s/_domain_/$sql_domain/g;
+   $q = mysql_apply_template_value($q, '_user_', $user);
+   $q = mysql_apply_template_value($q, '_domain_', $domain);
    ( $passwd_hash ) = &mysql_command($q);
 
    mysql_command("EXIT")==0 or
@@ -169,22 +167,18 @@ sub change_userpassword {
       return(-3, "MySQL connect error");
 
    my $q=$mysql_query{change_password};
-   my $sql_user = mysql_template_value($user);
-   my $sql_domain = mysql_template_value($domain);
-   $q=~s/_user_/$sql_user/g; $q=~s/_domain_/$sql_domain/g;
+   $q = mysql_apply_template_value($q, '_user_', $user);
+   $q = mysql_apply_template_value($q, '_domain_', $domain);
    if ( $mysql_auth{password_hash_method} =~ /plaintext/i ) {
-      my $sql_newpasswd = mysql_template_value($newpasswd);
-      $q=~ s/_new_password_/$sql_newpasswd/g;
+      $q = mysql_apply_template_value($q, '_new_password_', $newpasswd);
    } elsif ( $mysql_auth{password_hash_method} =~ /crypt/i ) {
       my @salt_chars = ('a'..'z','A'..'Z','0'..'9');
       my $salt = $salt_chars[rand(62)] . $salt_chars[rand(62)];
       $newpasswd = crypt($newpasswd, $salt);
-      my $sql_newpasswd = mysql_template_value($newpasswd);
-      $q =~ s/_new_password_/$sql_newpasswd/g;
+      $q = mysql_apply_template_value($q, '_new_password_', $newpasswd);
    } elsif ( $mysql_auth{password_hash_method} =~ /md5/i ) {
       $newpasswd = "{md5}".Digest::MD5::md5_hex($newpasswd);
-      my $sql_newpasswd = mysql_template_value($newpasswd);
-      $q =~ s/_new_password_/$sql_newpasswd/g;
+      $q = mysql_apply_template_value($q, '_new_password_', $newpasswd);
    }
    return (-3, 'MySQL update error') if ( mysql_command($q)!=0 );
 
