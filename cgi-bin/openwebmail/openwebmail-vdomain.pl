@@ -345,6 +345,7 @@ sub displaycell {
 sub edit_vuser {
    my ($focus, $alert, $pwd, $pwd2, $emailkey, $e_realnm, $realnm, %from_list)=@_;
    my $vuser = param('vuser')||'';
+   $vuser = clean_vuser($vuser) if $vuser ne '';
    my $action = param('action')||'';
    my $view = param('view')||'';
    my $oldchklogin=param('oldchklogin')||'';
@@ -541,7 +542,7 @@ sub edit_vuser {
 sub change_vuser {
    my $vuser_original=param('vuser')||'';
    my $realnm=param('realnm')||'';
-   my $vuser=ow::tool::untaint(lc($vuser_original));
+   my $vuser=clean_vuser($vuser_original);
 
    my $action=param('action')||'';
    my $pwd=param('newpassword')||'';
@@ -659,7 +660,7 @@ sub change_vuser {
       $aliastxt=" - aliases: @alias_list" if (@alias_list);
       writelog("vdomain $user: create vuser $vuser\@$domain$aliastxt" );
       # CREATE USER IN VIRTUAL PASSWD
-      vpasswd_update($vuser_original,0,$pwd,$chklogin);
+      vpasswd_update($vuser,0,$pwd,$chklogin);
 
       my ($vuid, $vhomedir, $release) = get_uid_home_release($vuser,$domain);
 
@@ -720,7 +721,7 @@ sub change_vuser {
       if ( $pwd !~ /\*\*/ or $chklogin != $oldchklogin ) {
          my $action=0;
          $action=2 if ($pwd =~ /\*\*/);
-         vpasswd_update($vuser_original,$action,$pwd,$chklogin);
+         vpasswd_update($vuser,$action,$pwd,$chklogin);
       }
 
       my ($vuid, $vhomedir, $release) = get_uid_home_release($vuser,$domain);
@@ -776,7 +777,7 @@ sub change_vuser {
 ########## DELETE USER  ##########################################
 sub delete_vuser {
    my $vuser_original = param('vuser')||'';
-   my $vuser=ow::tool::untaint(lc($vuser_original));
+   my $vuser=clean_vuser($vuser_original);
 
    if ( vuser_exists($vuser,vuser_list()) ) {
       # get the home directory before we remove the user from password file or trouble later!
@@ -784,7 +785,7 @@ sub delete_vuser {
 
       writelog("vdomain $user: $vuser\@$domain  delete $vuser_original");
       # DELETE USER IN VMPOP3D PASSWD
-      vpasswd_update($vuser_original,1);
+      vpasswd_update($vuser,1);
       # DELETE USER IN POSTFIX VIRTUAL
       vuser_update($vuser, 1);
       # DELETE USER IN POSTFIX ALIASES
@@ -1047,13 +1048,15 @@ sub vuser_exists {
 sub vuser_update {
    my ($vuser,$delete, @alias_list)=@_;
    my ($fh, $file, $origruid, $origeuid, $origegid) = root_open(${$config{'vdomain_postfix_virtual'}}[0]);
+   my $quoted_vuser = quotemeta($vuser);
+   my $quoted_domain = quotemeta($domain);
 
    my $fnd=0;
    my @lines;
    while (<$fh>) {	# read the virtual user file
       if (/^#/) {
          push @lines, $_;
-      } elsif ( /^\s*\S+\s+$vuser\.$domain\s*$/ ) { # remove existing entries for this user
+      } elsif ( /^\s*\S+\s+$quoted_vuser\.$quoted_domain\s*$/ ) { # remove existing entries for this user
          if ($delete) {
             s/\n//g; writelog("vdomain $user: $vuser\@$domain  remove virtual entry - $_");
          }
@@ -1136,12 +1139,14 @@ sub from_update {
 sub valias_update {
    my ($vuser,$delete,$entry)=@_;
    my ($fh, $file, $origruid, $origeuid, $origegid) = root_open(${$config{'vdomain_postfix_aliases'}}[0]);
+   my $quoted_vuser = quotemeta($vuser);
+   my $quoted_domain = quotemeta($domain);
 
    my $fnd=0;
    $fnd=1 if ($delete);
    my @lines;
    while (<$fh>) {	# read the alias file
-      if ( /^\s*$vuser\.$domain\s*:/ ) { # replace existing entry for this alias
+      if ( /^\s*$quoted_vuser\.$quoted_domain\s*:/ ) { # replace existing entry for this alias
          if ($delete) {
             s/\n//g; writelog("vdomain $user: $vuser\@$domain  remove aliases entry - $_");
          } else {
@@ -1194,12 +1199,13 @@ sub vpasswd_update {
    # We should be in and out of this file fast enough to not be noticed.
 
    my ($fh, $file, $origruid, $origeuid, $origegid) = root_open("$config{'vdomain_vmpop3_pwdpath'}/$domain/$config{'vdomain_vmpop3_pwdname'}");
+   my $quoted_vuser = quotemeta($vuser);
 
    my $fnd=0;
    $fnd=1 if ($action==1);
    my @lines;
    while (<$fh>) {	# read the pwd file
-      if (/^$vuser:(.)/) {
+      if (/^$quoted_vuser:(.)/) {
          if ($action==1) {
             writelog("vdomain $user: $vuser\@$domain  remove password entry");
          } else {
@@ -1353,6 +1359,16 @@ sub root_exists {
 ########## END FILE_EXISTS #######################################
 
 ########## CLEAN_EMAIL ###########################################
+sub clean_vuser {
+   my $vuser = lc(shift || '');
+   my $safevuser = safedomainname($vuser);
+
+   openwebmailerror("$lang_text{'vdomain_usermgr'} $lang_err{'has_illegal_chars'}")
+      if $safevuser eq '' || $safevuser ne $vuser;
+
+   return ow::tool::untaint($safevuser);
+}
+
 sub clean_email {
    my $email=lc($_[0]);
    $email=~s/\s*//g;                                            # remove spaces
