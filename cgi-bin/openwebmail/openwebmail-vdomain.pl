@@ -562,6 +562,16 @@ sub vdomain_js_sq {
    return $text;
 }
 
+sub safe_frombook_field {
+   my $field = shift;
+
+   $field = '' unless defined $field;
+   $field =~ s/[\r\n]+/ /g;
+   $field =~ s/@@@/chr(64) . chr(64) . ' ' . chr(64)/eg;
+
+   return $field;
+}
+
 ########## CHANGE USER SETTINGS ##################################
 sub change_vuser {
    my $vuser_original=param('vuser')||'';
@@ -1147,9 +1157,9 @@ sub from_update {
    sysopen(FB, $frombook, O_WRONLY|O_TRUNC|O_CREAT) or
       openwebmailerror("$lang_err{'couldnt_write'} $frombook ($!)");
 
-   print FB "$vuser\@$domain\@\@\@$realnm\n" if ($realnm);
+   print FB "$vuser\@$domain\@\@\@" . safe_frombook_field($realnm) . "\n" if ($realnm);
    foreach (sort keys %from_list) {
-      print FB "$_\@\@\@$from_list{$_}\n";
+      print FB "$_\@\@\@" . safe_frombook_field($from_list{$_}) . "\n";
    }
    close(FB);
    ow::filelock::lock($frombook, LOCK_UN);
