@@ -1921,6 +1921,9 @@ sub sendmessage {
       $composecharset = $prefs{sendcharset};
    }
 
+   ($realname, $from, $to, $cc, $bcc, $replyto, $subject, $inreplyto, $references, $priority) =
+      map { sanitize_mail_header_value($_) } ($realname, $from, $to, $cc, $bcc, $replyto, $subject, $inreplyto, $references, $priority);
+
    # wrap non-text messages in complete html;
    if ($msgformat ne 'text') {
       $body = qq|<html>\n| .
@@ -2914,6 +2917,18 @@ sub _convert_attfilename {
    return "$prefix$name$postfix";
 }
 
+sub sanitize_mail_header_value {
+   my $value = shift;
+   return '' unless defined $value;
+
+   $value =~ s/[\r\n]+/ /g;
+   $value =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+//g;
+   $value =~ s/^\s+//;
+   $value =~ s/\s+$//;
+
+   return $value;
+}
+
 sub folding {
    # folding the to, cc, bcc field so it won't violate the 998 char
    # limit (defined in RFC 2822 2.2.3) after base64/qp encoding
@@ -3023,6 +3038,10 @@ sub replyreceipt {
          $realname =~ s/['"]/ /g; # Get rid of shell escape attempts
          $from     =~ s/['"]/ /g; # Get rid of shell escape attempts
 
+         my $receipt_subject = sanitize_mail_header_value($attr[$_SUBJECT]);
+         ($realname, $from, $to) = map { sanitize_mail_header_value($_) } ($realname, $from, $to);
+         my $receipt_replyto = sanitize_mail_header_value($prefs{replyto});
+
          my @recipients = ();
          foreach my $to_recipient (ow::tool::str2list($to)) {
             my $addr = (ow::tool::email2nameaddr($to_recipient))[1];
@@ -3101,7 +3120,7 @@ sub replyreceipt {
 
          $s .= "To: " . ow::mime::encode_mimewords(folding(join(', ', ow::tool::str2list($to))), ('Charset' => $prefs{charset})) . "\n";
 
-         $s .= "Reply-To: " . ow::mime::encode_mimewords($prefs{replyto}, ('Charset' => $prefs{charset})) . "\n" if $prefs{replyto};
+         $s .= "Reply-To: " . ow::mime::encode_mimewords($receipt_replyto, ('Charset' => $prefs{charset})) . "\n" if $receipt_replyto;
 
          # reply with english if sender has different charset than us
          my $is_samecharset = 0;
@@ -3110,9 +3129,9 @@ sub replyreceipt {
          # $is_samecharset=1 if ( $attr[$_CONTENT_TYPE]=~/charset="?\Q$prefs{charset}\E"?/i);
 
          if ($is_samecharset) {
-            $s .= "Subject: " . ow::mime::encode_mimewords(gettext('Read receipt:') . " $attr[$_SUBJECT]", ('Charset' => $prefs{charset})) . "\n";
+            $s .= "Subject: " . ow::mime::encode_mimewords(gettext('Read receipt:') . " $receipt_subject", ('Charset' => $prefs{charset})) . "\n";
          } else {
-            $s .= "Subject: " . ow::mime::encode_mimewords("Read receipt: $attr[$_SUBJECT]", ('Charset' => 'utf-8')) . "\n";
+            $s .= "Subject: " . ow::mime::encode_mimewords("Read receipt: $receipt_subject", ('Charset' => 'utf-8')) . "\n";
          }
 
          $s .= "Date: $date\n" .
