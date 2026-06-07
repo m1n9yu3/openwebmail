@@ -1823,7 +1823,7 @@ sub saveprefs {
    check_and_create_dotdir(dotpath('/'));
 
    openwebmailerror(gettext('Illegal characters in forward email address.'))
-     if $config{enable_strictforward} && defined param('forwardaddress') && param('forwardaddress') =~ m/[&;\`\<\>\(\)\{\}]/;
+     if $config{enable_setforward} && defined param('forwardaddress') && !is_safeforwardtext(param('forwardaddress'));
 
    my %newprefs = ();
 
@@ -1921,8 +1921,8 @@ sub saveprefs {
    $value = substr($value, 0, 500) if length($value) > 500; # truncate signature to 500 chars
    $newprefs{signature} = $value;
 
-   my $forwardaddress   = param('forwardaddress')   || '';
-   my $keeplocalcopy    = param('keeplocalcopy')    || 0;
+   my $forwardaddress   = $config{enable_setforward} ? param('forwardaddress') || '' : '';
+   my $keeplocalcopy    = $config{enable_setforward} ? param('keeplocalcopy')  || 0  : 0;
    my $autoreply        = param('autoreply')        || 0;
    my $autoreplysubject = param('autoreplysubject') || '';
    my $autoreplytext    = param('autoreplytext')    || '';
@@ -2055,12 +2055,37 @@ sub splitforwardtext {
          $autoreply = 1;
       } elsif (is_selfemail($name)) {
          $keeplocalcopy = 1;
-      } else {
+      } elsif (is_safeforwardaddr($name)) {
          push(@forwards, $name);
       }
    }
 
    return ($autoreply, $keeplocalcopy, @forwards);
+}
+
+sub is_safeforwardtext {
+   my $forwardtext = shift;
+
+   return 1 if !defined $forwardtext || $forwardtext eq '';
+
+   foreach my $name ( split(/[,;\n\r]+/, $forwardtext) ) {
+      $name =~ s/^\s+//;
+      $name =~ s/\s+$//;
+      next if ( $name =~ m/^$/ );
+
+      return 0 unless is_selfemail($name) || is_safeforwardaddr($name);
+   }
+
+   return 1;
+}
+
+sub is_safeforwardaddr {
+   my $email = shift;
+
+   return 0 unless defined $email;
+   return 0 if $email =~ m/[\x00-\x20\x7f\|`\{\}\(\)<>&:\/\\]/ && $email !~ m/^\\/;
+
+   return $email =~ m/^\\?[A-Za-z0-9][A-Za-z0-9._%+-]*(?:\@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*)?$/;
 }
 
 sub is_selfemail {
