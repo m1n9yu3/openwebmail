@@ -2674,7 +2674,7 @@ sub addredit {
                openwebmailerror(gettext('The upload is not an approved file or type:') . " $uploadtype ($attcontenttype $uploadextension)");
             }
          }
-      } elsif ($uri) {
+      } elsif ($uri && is_safeabookurl($uri)) {
          # what is the index number for this new upload?
          my @form     = param();
          my $newindex = 0;
@@ -2826,6 +2826,7 @@ sub addredit {
       # outputvfile will check values and add X-OWM-UID if needed.
       # readvfile will make it a hash, double check values,
       # and add any missing propertynames.
+      sanitize_abook_uri_fields($completevcard);
       $completevcard = readvfile(outputvfile('vcard',$completevcard));
 
       # reset $xowmuid in case outputvfile assigned one because it was blank before.
@@ -3045,6 +3046,44 @@ sub is_quota_available {
    }
 
    return 1;
+}
+
+sub is_safeabookurl {
+   my $url = shift;
+
+   return 0 unless defined $url;
+   $url = $1 if $url =~ m/href="?([^" >]+)/i;
+   return $url =~ m#\A(?:https?|ftp)://[^\s]+\z#i ? 1 : 0;
+}
+
+sub sanitize_abook_uri_fields {
+   my $r_book = shift;
+
+   return unless defined $r_book && ref $r_book eq 'HASH';
+
+   foreach my $xowmuid (keys %{$r_book}) {
+      next unless defined $r_book->{$xowmuid} && ref $r_book->{$xowmuid} eq 'HASH';
+
+      foreach my $propertyname (qw(PHOTO LOGO SOUND KEY AGENT)) {
+         next unless defined $r_book->{$xowmuid}{$propertyname} && ref $r_book->{$xowmuid}{$propertyname} eq 'ARRAY';
+
+         my @safe_fields = ();
+         foreach my $field (@{$r_book->{$xowmuid}{$propertyname}}) {
+            my $is_uri = defined $field->{TYPES}
+                         && ref $field->{TYPES} eq 'HASH'
+                         && (exists $field->{TYPES}{URI} || exists $field->{TYPES}{URL});
+
+            next if $is_uri && !is_safeabookurl($field->{VALUE});
+            push(@safe_fields, $field);
+         }
+
+         if (@safe_fields) {
+            $r_book->{$xowmuid}{$propertyname} = \@safe_fields;
+         } else {
+            delete $r_book->{$xowmuid}{$propertyname};
+         }
+      }
+   }
 }
 
 sub deepcopy {
@@ -3343,6 +3382,7 @@ sub addrimport {
    my $newaddrinfo = $importformat =~ m/^(?:vcard2.1|vcard3.0)/ ? importvcard($importfilecontents) :
                      $importformat =~ m/^(?:csv|tab)/ ? importfsv($importfilecontents, $importformat, $importcharset, $importfirstrow, @importfields) :
                      openwebmailerror(gettext('Invalid import format:') . " $importformat");
+   sanitize_abook_uri_fields($newaddrinfo);
 
    # write out the result
    if ($importdestination eq 'newaddressbook') {
@@ -4160,6 +4200,11 @@ sub HT_BINARYDATA {
 
          # unwrap <a> linked values
          $FIELD->{VALUE} = $1 if $FIELD->{VALUE} =~ m/href="?([^" >]+)/i;
+         if (!is_safeabookurl($FIELD->{VALUE})) {
+            delete $FIELD->{URI};
+            $FIELD->{VALUE} = '';
+            return ($FIELD, $CHARSET);
+         }
          $FIELD->{show_inline} = scalar grep { m/^(?:GIF|JPE?G|PNG)$/ } keys %{$FIELD};
       } elsif (exists $FIELD->{BASE64} || exists $FIELD->{VCARD}) {
          unless (param('upload') || param('webdisksel') || param('formchange')) {
@@ -4242,4 +4287,3 @@ sub calculate_age {
 
    return $age;
 }
-
