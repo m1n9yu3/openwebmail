@@ -3029,6 +3029,32 @@ sub is_abookfolder_writable {
    return 0;
 }
 
+sub validate_importdestination {
+   my $importdestination = shift;
+
+   openwebmailerror(gettext('An import destination must be chosen.'))
+      if !defined $importdestination || $importdestination eq '';
+
+   return if $importdestination eq 'newaddressbook';
+
+   my %writable = map { $_ => 1 } get_writable_abookfolders();
+   openwebmailerror(gettext('The addressbook folder is read-only:') . " $importdestination")
+      unless exists $writable{$importdestination};
+}
+
+sub validate_new_abookfolder {
+   my $abookfoldername = shift;
+
+   openwebmailerror(gettext('Illegal characters in folder name:') . ' ' . f2u($abookfoldername))
+      unless defined $abookfoldername && is_safefoldername($abookfoldername);
+
+   openwebmailerror(gettext('The addressbook folder name already exists:') . ' ' . f2u($abookfoldername))
+      if is_defaultabookfolder($abookfoldername);
+
+   openwebmailerror(sprintf(ngettext('The addressbook folder name exceeds the %d character limit:', 'The addressbook folder name exceeds the %d character limit:', $config{foldername_maxlen}), $config{foldername_maxlen}) . ' ' .  f2u($abookfoldername))
+      if length($abookfoldername) > $config{foldername_maxlen};
+}
+
 sub userabookfolders_totalsize {
    my $totalsize = 0;
 
@@ -3201,6 +3227,7 @@ sub addrimportfieldselect {
    my $importcharset     = param('importcharset') || $prefs{charset} || 'none';
 
    my %importcharsets    = map { $ow::lang::charactersets{$_}[1] => 1 } keys %ow::lang::charactersets;
+   validate_importdestination($importdestination);
 
    # Convert :: back to the ' like it should be.
    $importfile =~ s/::/'/g;
@@ -3368,6 +3395,7 @@ sub addrimport {
    openwebmailerror(gettext('Illegal character set for import')) unless exists $importcharsets{$importcharset};
 
    openwebmailerror(gettext('Illegal serial for import')) if $importserial !~ m/^\d+$/;
+   validate_importdestination($importdestination);
 
    # read the import data from the sessions directory
    my $importsessionfile = ow::tool::untaint("$config{ow_sessionsdir}/$thissession-vcard$importserial");
@@ -3400,6 +3428,8 @@ sub addrimport {
       }
       $fname =~ s#^.*/##; # unix path
       $fname =~ s#^.*:##; # mac path and dos drive
+
+      validate_new_abookfolder($fname);
 
       my $newbookfile = ow::tool::untaint(abookfolder2file($fname));
 
@@ -3816,10 +3846,14 @@ sub addrimportattachment {
 
    # load the existing book
    my $importdest = $attname || gettext('attachment');
+   validate_new_abookfolder($importdest);
+
    my $targetfile = ow::tool::untaint(abookfolder2file($importdest));
    my $targetbook = {};
 
    if (-e $targetfile) {
+      openwebmailerror(gettext('The addressbook folder is read-only:') . " $importdest")
+         unless is_abookfolder_writable($importdest);
       $targetbook = readadrbook($targetfile, undef, undef);
    } else {
       # create the book file
