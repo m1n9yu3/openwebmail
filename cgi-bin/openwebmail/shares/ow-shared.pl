@@ -2534,12 +2534,14 @@ sub autologin_check {
    ow::dbm::opendb(\%DB, $autologindb, LOCK_EX) or
       openwebmailerror(gettext('Cannot open db:') . " $autologindb ($!)");
 
-   $DB{$agentip} = $timestamp if defined $DB{$agentip};
+   my $valid = defined $DB{$agentip};
+
+   $DB{$agentip} = $timestamp if $valid;
 
    ow::dbm::closedb(\%DB, $autologindb) or
       openwebmailerror(gettext('Cannot close db:') . " $autologindb ($!)");
 
-   return 1;
+   return $valid ? 1 : 0;
 }
 
 sub get_defaultfolders {
