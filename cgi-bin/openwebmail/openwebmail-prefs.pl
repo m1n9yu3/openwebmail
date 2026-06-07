@@ -2163,6 +2163,9 @@ sub readdotvacationmsg {
 sub writedotvacationmsg {
    my ($autoreply, $subject, $text, $signature, $email, $userfrom, $charset) = @_;
 
+   ($subject, $email, $userfrom, $charset) =
+      map { sanitize_mail_header_value($_) } ($subject, $email, $userfrom, $charset);
+
    my $from = '';
    if ($userfrom) {
       $from = qq|"$userfrom" <$email>|;
@@ -2236,6 +2239,18 @@ sub writedotvacationmsg {
              $signature; # append signature
    close MSG;
    chown($uuid, (split(/\s+/,$ugid))[0], "$homedir/.vacation.msg");
+}
+
+sub sanitize_mail_header_value {
+   my $value = shift;
+   return '' unless defined $value;
+
+   $value =~ s/[\r\n]+/ /g;
+   $value =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+//g;
+   $value =~ s/^\s+//;
+   $value =~ s/\s+$//;
+
+   return $value;
 }
 
 sub editpassword {
@@ -2551,6 +2566,7 @@ sub modfrom {
 
    $realname =~ s/^\s*//;
    $realname =~ s/\s*$//;
+   $realname = sanitize_mail_header_value($realname);
 
    $email =~ s/[<>\[\]\\,;:`"\s]//g;
 
