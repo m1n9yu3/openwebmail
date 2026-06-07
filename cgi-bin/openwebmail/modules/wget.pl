@@ -12,11 +12,14 @@ use strict;
 use warnings FATAL => 'all';
 
 use Fcntl qw(:DEFAULT :flock);
+use Socket;
 
 require "modules/tool.pl";
 
 sub get_handle {
    my ($wgetbin, $url)=@_;
+
+   return(-2, 'URL host is not allowed') unless is_public_url($url);
 
    my ($outfh, $outfile)=ow::tool::mktmpfile('wget.tmpfile');
    my ($errfh, $errfile)=ow::tool::mktmpfile('wget.err');
@@ -27,7 +30,7 @@ sub get_handle {
 
    local $SIG{CHLD}; # disable $SIG{CHLD} temporarily for wait()
 
-   system($wgetbin, "-l0", "-O-", ow::tool::untaint($url));
+   system($wgetbin, "-l0", "--max-redirect=0", "-O-", ow::tool::untaint($url));
 
    open(STDERR,">&SAVEERR"); close(SAVEERR);
    open(STDOUT,">&SAVEOUT"); close(SAVEOUT);
@@ -58,6 +61,67 @@ sub get_handle {
       $contenttype=ow::tool::ext2contenttype($url) if ($contenttype eq '');
       return(0, '', $contenttype, $handle);
    }
+}
+
+sub is_public_url {
+   my $url = shift || '';
+
+   my ($scheme, $authority) = $url =~ m{^([A-Za-z][A-Za-z0-9+.-]*)://([^/\?#]*)};
+   return 0 unless defined $scheme && defined $authority;
+   return 0 unless $scheme =~ m/^(?:https?|ftp)$/i;
+
+   $authority =~ s/^[^@]*@//;
+
+   my $host = '';
+   if ($authority =~ m/^\[([^\]]+)\](?::\d+)?$/) {
+      return 0; # IPv6 validation is not implemented here; fail closed.
+   } elsif ($authority =~ m/^([^:]+)(?::\d+)?$/) {
+      $host = lc($1);
+   } else {
+      return 0;
+   }
+
+   $host =~ s/\.$//;
+   return 0 if $host eq '' || $host =~ m/[\s\000-\037]/;
+   return 0 if $host eq 'localhost' || $host =~ m/\.localhost$/;
+
+   my @addrs = ();
+   if (my $addr = inet_aton($host)) {
+      push(@addrs, $addr);
+   } else {
+      my ($name, $aliases, $addrtype, $length, @resolved) = gethostbyname($host);
+      @addrs = @resolved;
+   }
+
+   return 0 if scalar @addrs < 1;
+
+   foreach my $addr (@addrs) {
+      return 0 if !defined $addr || length($addr) != 4 || is_private_ipv4($addr);
+   }
+
+   return 1;
+}
+
+sub is_private_ipv4 {
+   my $addr = shift;
+   my ($a, $b, $c, $d) = unpack('C4', $addr);
+
+   return 1 if $a == 0;
+   return 1 if $a == 10;
+   return 1 if $a == 100 && $b >= 64 && $b <= 127;
+   return 1 if $a == 127;
+   return 1 if $a == 169 && $b == 254;
+   return 1 if $a == 172 && $b >= 16 && $b <= 31;
+   return 1 if $a == 192 && $b == 168;
+   return 1 if $a == 192 && $b == 0 && $c == 0;
+   return 1 if $a == 192 && $b == 0 && $c == 2;
+   return 1 if $a == 192 && $b == 88 && $c == 99;
+   return 1 if $a == 198 && $b >= 18 && $b <= 19;
+   return 1 if $a == 198 && $b == 51 && $c == 100;
+   return 1 if $a == 203 && $b == 0 && $c == 113;
+   return 1 if $a >= 224;
+
+   return 0;
 }
 
 1;
