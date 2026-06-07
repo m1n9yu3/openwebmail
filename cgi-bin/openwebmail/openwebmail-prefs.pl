@@ -1847,6 +1847,7 @@ sub saveprefs {
          my $background = param('background');
 
          if ($background eq 'USERDEFINE') {
+            $value = sanitize_bgurl($value);
             $newprefs{$key} = $value if $value ne '';
          } else {
             $newprefs{$key} = "$config{ow_htmlurl}/images/backgrounds/$background";
@@ -2001,6 +2002,16 @@ sub saveprefs {
                    );
 
    httpprint([], [$template->output]);
+}
+
+sub sanitize_bgurl {
+   my $url = shift || '';
+
+   return '' if $url =~ m/[\x00-\x20\x7f"'\\<>()]/;
+   return '' if $url =~ m#\A(?:javascript|data|vbscript):#i;
+   return '' if $url ne '' && $url !~ m#\A(?:https?|ftp)://[^\s"'\\<>()]+\z#i && $url !~ m#\A/[^\s"'\\<>()]*\z#;
+
+   return $url;
 }
 
 sub readdotforward {
