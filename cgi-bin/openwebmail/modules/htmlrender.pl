@@ -175,15 +175,51 @@ sub _clean_emblink {
 
    if ($url !~ /\Q$ENV{HTTP_HOST}\E/is) { # non-local URL found
       $url =~ s/["']//g; # remove leading " or '
+      my $attrurl = _html_attr($url);
+      my $jsurl   = _js_sq(_decode_html_entities($url));
 
-      return(qq|$type="$blankimgurl" border="1" title="embedded CGI removed by OWM" alt="embedded CGI removed by OWM: $url" onclick="window.open('$url', '_extobj');"$end|)
+      return(qq|$type="$blankimgurl" border="1" title="embedded CGI removed by OWM" alt="embedded CGI removed by OWM: $attrurl" onclick="window.open('$jsurl', '_extobj');"$end|)
         if $disableemblink eq 'cgionly' && $url =~ m/\?/s;
 
-      return(qq|$type="$blankimgurl" border="1" title="embedded link removed by OWM" alt="embedded link removed by OWM: $url" onclick="window.open('$url', '_extobj');"$end|)
+      return(qq|$type="$blankimgurl" border="1" title="embedded link removed by OWM" alt="embedded link removed by OWM: $attrurl" onclick="window.open('$jsurl', '_extobj');"$end|)
         if $disableemblink eq 'all';
    }
 
    return("$type=$url".$end);
+}
+
+sub _decode_html_entities {
+   my $text = shift;
+   $text =~ s/&#0*([0-9]+);?/chr($1)/eg;
+   $text =~ s/&#x0*([0-9a-f]+);?/chr(hex($1))/egi;
+   $text =~ s/&quot;/"/gi;
+   $text =~ s/&apos;/'/gi;
+   $text =~ s/&lt;/</gi;
+   $text =~ s/&gt;/>/gi;
+   $text =~ s/&amp;/&/gi;
+   return $text;
+}
+
+sub _html_attr {
+   my $text = shift;
+   $text =~ s/&/&amp;/g;
+   $text =~ s/"/&quot;/g;
+   $text =~ s/</&lt;/g;
+   $text =~ s/>/&gt;/g;
+   $text =~ s/'/&#39;/g;
+   return $text;
+}
+
+sub _js_sq {
+   my $text = shift;
+   $text =~ s/[\r\n]+/ /g;
+   $text =~ s/\\/\\\\/g;
+   $text =~ s/'/\\x27/g;
+   $text =~ s/"/\\x22/g;
+   $text =~ s/</\\x3c/g;
+   $text =~ s/>/\\x3e/g;
+   $text =~ s/&/\\x26/g;
+   return _html_attr($text);
 }
 
 sub html4blockimages {
