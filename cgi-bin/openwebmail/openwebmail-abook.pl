@@ -2912,11 +2912,14 @@ sub addrviewatt {
    my $file = param('file') || openwebmailerror(gettext('No named file to view'));
    my $type = param('type') || ''; # undef makes application/octet-stream
 
+   openwebmailerror(gettext('Parameter format error.')) unless $file =~ m/^\d+$/;
+
    $type = lc $type;
 
    my $contenttype = ow::tool::ext2contenttype($type);
    my $ext = ow::tool::contenttype2ext($contenttype);
    $ext = 'unknown' if $ext eq 'bin';
+   my $filename = safedlname("$file.$ext");
 
    my $target = ow::tool::untaint("$config{ow_sessionsdir}/$thissession-vcard$file");
 
@@ -2937,13 +2940,13 @@ sub addrviewatt {
                        qq|Content-Length: $zlen\n| .
                        qq|Connection: close\n| .
                        qq|Content-Type: $contenttype; name="inline.$ext"\n| .
-                       qq|Content-Disposition: inline; filename="$file.$ext"\n|;
+                       qq|Content-Disposition: inline; filename="$filename"\n|;
       print $zattheader, "\n", $zattbody;
    } else {
       my $attheader = qq|Content-Length: $length\n| .
                       qq|Connection: close\n| .
                       qq|Content-Type: $contenttype; name="inline.$ext"\n| .
-                      qq|Content-Disposition: inline; filename="$file.$ext"\n|;
+                      qq|Content-Disposition: inline; filename="$filename"\n|;
       print $attheader, "\n", $attbody;
    }
 }
