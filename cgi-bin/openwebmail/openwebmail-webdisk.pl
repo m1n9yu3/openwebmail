@@ -2059,19 +2059,7 @@ sub previewfile {
    my $contenttype = ow::tool::ext2contenttype($vpath);
 
    if ($vpath =~ m/\.(?:html?|js)$/i) {
-      # use the dir where this html is as new currentdir
-      my @p = path2array($vpath);
-      pop @p;
-
-      my $newdir      = '/' . join('/', @p);
-      my $preview_url = qq|$config{ow_cgiurl}/openwebmail-webdisk.pl?| .
-                        qq|&amp;action=preview| .
-                        qq|sessionid=$thissession| .
-                        qq|&amp;currentdir=| . ow::tool::escapeURL($newdir) .
-                        qq|&amp;selitems=|;
-
-      $filecontent =~ s/\r\n/\n/g;
-      $filecontent = linkconv($filecontent, $preview_url);
+      $contenttype = 'text/plain';
    }
 
    print qq|Connection: close\n| .
@@ -2094,33 +2082,6 @@ sub previewfile {
    print $filecontent;
 
    return 1;
-}
-
-sub linkconv {
-   my ($html, $preview_url) = @_;
-   $html =~ s/( url| href| src| stylesrc| background)(="?)([^\<\>\s]+?)("?[>\s+])/_linkconv($1.$2, $3, $4, $preview_url)/igems;
-   $html =~ s/(window.open\()([^\<\>\s]+?)(\))/_linkconv2($1, $2, $3, $preview_url)/igems;
-   return $html;
-}
-
-sub _linkconv {
-   my ($prefix, $link, $postfix, $preview_url) = @_;
-
-   return ($prefix . $link . $postfix) if $link =~ m!^(?:mailto:|javascript:|\#)!i;
-
-   $link = ($preview_url . $link) if $link !~ m!^http://!i && $link !~ m!^/!;
-
-   return $prefix . $link . $postfix;
-}
-
-sub _linkconv2 {
-   my ($prefix, $link, $postfix, $preview_url) = @_;
-
-   return ($prefix . $link . $postfix) if $link =~ m!^'?(?:http://|/)!i;
-
-   $link = qq|'$preview_url'.$link|;
-
-   return $prefix . $link . $postfix;
 }
 
 sub uploadfile {
