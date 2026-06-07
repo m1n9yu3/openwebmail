@@ -33,7 +33,7 @@ use warnings FATAL => 'all';
 
 use Fcntl qw(:DEFAULT :flock);
 
-use vars qw(%config);
+use vars qw(%config %prefs);
 
 sub sort_filterrules {
    # given a hash ref of filter rules, return them as a sorted array
@@ -119,6 +119,16 @@ sub read_filterbook {
    return (0, '');
 }
 
+sub safe_filterbook_field {
+   my $field = shift;
+
+   $field = '' unless defined $field;
+   $field =~ s/[\r\n]+/ /g;
+   $field =~ s/\@\@\@/\@\@ \@/g;
+
+   return $field;
+}
+
 sub write_filterbook {
    my ($filterbookfile, $r_filterrules) = @_;
 
@@ -129,7 +139,8 @@ sub write_filterbook {
 
    foreach my $rule (@sortedrules) {
       my %rule = %{$r_filterrules->{$rule}};
-      print FILTER join('@@@', $rule{priority},
+      print FILTER join('@@@', map { safe_filterbook_field($_) }
+                               $rule{priority},
                                $rule{type},
                                $rule{inc},
                                $rule{text},
