@@ -1857,7 +1857,7 @@ sub saveprefs {
       } elsif ($key eq 'dateformat' || $key eq 'replyto') {
          # remove dangerous char
          $value =~ s/\.\.+//g;
-         $value =~ s/[=\n`]//g;
+         $value =~ s/[=\r\n`]//g;
 
          $newprefs{$key} = $value;
 

@@ -1567,6 +1567,9 @@ sub send_mail {
 
    $realname = '' unless defined $realname && $realname;
 
+   ($from, $realname, $to, $date, $subject) =
+      map { sanitize_mail_header_value($_) } ($from, $realname, $to, $date, $subject);
+
    $from     =~ s/['"]/ /g;  # Get rid of shell escape attempts
    $realname =~ s/['"]/ /g;  # Get rid of shell escape attempts
 
@@ -1632,11 +1635,12 @@ sub send_mail {
    }
 
    my $prefcharset = (ow::lang::localeinfo($prefs{'locale'}))[4];
+   my $replyto = sanitize_mail_header_value($prefs{'replyto'});
 
    $smtp->data();
    $smtp->datasend("From: ".ow::mime::encode_mimewords("$realname <$from>", ('Charset'=>"$prefcharset"))."\n",
                    "To: ".ow::mime::encode_mimewords($to, ('Charset'=>"$prefcharset"))."\n");
-   $smtp->datasend("Reply-To: ".ow::mime::encode_mimewords($prefs{'replyto'}, ('Charset'=>"$prefcharset"))."\n") if ($prefs{'replyto'});
+   $smtp->datasend("Reply-To: ".ow::mime::encode_mimewords($replyto, ('Charset'=>"$prefcharset"))."\n") if ($replyto);
 
    $smtp->datasend("Subject: ".ow::mime::encode_mimewords($subject, ('Charset'=>"$prefcharset"))."\n",
                    "Date: $date\n",
@@ -1655,6 +1659,18 @@ sub send_mail {
    $smtp->quit();
 
    return 0;
+}
+
+sub sanitize_mail_header_value {
+   my $value = shift;
+   return '' unless defined $value;
+
+   $value =~ s/[\r\n]+/ /g;
+   $value =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+//g;
+   $value =~ s/^\s+//;
+   $value =~ s/\s+$//;
+
+   return $value;
 }
 
 sub pop3_fetches {

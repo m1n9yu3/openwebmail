@@ -1863,7 +1863,7 @@ sub addmod {
       $link =~ s#\Q$thissession\E#\%THISSESSION\%#;
 
       $link  = 0 unless is_safecalendarurl($link);
-      $email = 0 if $email !~ m#[^\s@]+@[^\s@]+#;
+      $email = 0 unless is_safecalendaremail($email);
 
       # convert time format to military time.
       if ($prefs{hourformat} == 12) {
@@ -2069,6 +2069,20 @@ sub is_safecalendarurl {
 
    return 0 unless defined $url;
    return $url =~ m#\A(?:https?|ftp)://[^\s]+\z#i ? 1 : 0;
+}
+
+sub is_safecalendaremail {
+   my $email = shift;
+
+   return 0 unless defined $email && $email ne '';
+   return 0 if $email =~ m/[\r\n\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
+
+   foreach my $recipient (ow::tool::str2list($email)) {
+      my $addr = (ow::tool::email2nameaddr($recipient))[1];
+      return 0 if $addr eq '' || $addr =~ m/\s/ || $addr !~ m/\A[^@\s]+@[^@\s]+\z/;
+   }
+
+   return 1;
 }
 
 sub hourmin2str {
