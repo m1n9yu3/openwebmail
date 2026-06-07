@@ -171,7 +171,7 @@
             <select name="stationeryname" accesskey="I" onchange="document.stationeryForm.submit();">
               <option>gettext('-- Stationery for Reply --')</option>
             <tmpl_loop stationeryselectloop>
-              <option value="<tmpl_var option escape="html">" <tmpl_if selected>selected</tmpl_if>><tmpl_var label escape="none"></option>
+              <option value="<tmpl_var option escape="html">" <tmpl_if selected>selected</tmpl_if>><tmpl_var label escape="html"></option>
             </tmpl_loop>
             </select>
             </form>
@@ -577,7 +577,7 @@
             <select name="stationeryname" accesskey="I" onchange="document.stationeryForm.submit();">
               <option>gettext('-- Stationery for Reply --')</option>
             <tmpl_loop stationeryselectloop>
-              <option value="<tmpl_var option escape="html">" <tmpl_if selected>selected</tmpl_if>><tmpl_var label escape="none"></option>
+              <option value="<tmpl_var option escape="html">" <tmpl_if selected>selected</tmpl_if>><tmpl_var label escape="html"></option>
             </tmpl_loop>
             </select>
             </form>
