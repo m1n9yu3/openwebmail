@@ -81,9 +81,17 @@ sub is_public_url {
       return 0;
    }
 
+   return is_public_host($host);
+}
+
+sub is_public_host {
+   my $host = shift || '';
+
+   $host = lc($host);
    $host =~ s/\.$//;
    return 0 if $host eq '' || $host =~ m/[\s\000-\037]/;
    return 0 if $host eq 'localhost' || $host =~ m/\.localhost$/;
+   return 0 if $host =~ m/:/; # IPv6 validation is not implemented here; fail closed.
 
    my @addrs = ();
    if (my $addr = inet_aton($host)) {

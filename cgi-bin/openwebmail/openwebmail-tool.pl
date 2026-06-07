@@ -87,6 +87,7 @@ require "modules/mime.pl";
 require "modules/mailparse.pl";
 require "modules/spamcheck.pl";
 require "modules/viruscheck.pl";
+require "modules/wget.pl";
 require "auth/auth.pl";
 require "quota/quota.pl";
 require "shares/ow-shared.pl";
@@ -1683,6 +1684,7 @@ sub pop3_fetches {
          }
       }
       next if ($disallowed);
+      next unless ow::wget::is_public_host($pop3host);
 
       my ($ret, $errmsg) = fetchmail($pop3host, $pop3port, $pop3ssl,
                                      $pop3user, $pop3passwd, $pop3del);

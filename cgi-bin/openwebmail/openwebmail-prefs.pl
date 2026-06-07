@@ -69,6 +69,7 @@ require "modules/datetime.pl";
 require "modules/lang.pl";
 require "modules/mime.pl";
 require "modules/htmltext.pl";
+require "modules/wget.pl";
 require "auth/auth.pl";
 require "quota/quota.pl";
 require "shares/ow-shared.pl";
@@ -2691,6 +2692,7 @@ sub modpop3 {
          foreach (@{$config{pop3_disallowed_servers}}) {
             openwebmailerror(gettext('Disallowed POP3 server:') . " $pop3host") if $pop3host eq $_;
          }
+         openwebmailerror(gettext('Disallowed POP3 server:') . " $pop3host") unless ow::wget::is_public_host($pop3host);
 
          $pop3port = 110 if $pop3port !~ /^\d+$/;
 
@@ -3181,4 +3183,3 @@ sub timeoutwarning {
 
    httpprint([], [$template->output]);
 }
-

@@ -71,6 +71,7 @@ require "modules/mime.pl";
 require "modules/mailparse.pl";
 require "modules/spamcheck.pl";
 require "modules/viruscheck.pl";
+require "modules/wget.pl";
 require "auth/auth.pl";
 require "quota/quota.pl";
 require "shares/ow-shared.pl";
@@ -1167,6 +1168,7 @@ sub www_pop3_fetch {
    foreach (@{$config{pop3_disallowed_servers}}) {
       openwebmailerror(gettext('Disallowed POP3 server:') . " $pop3host") if $_ eq $pop3host;
    }
+   openwebmailerror(gettext('Disallowed POP3 server:') . " $pop3host") unless ow::wget::is_public_host($pop3host);
 
    my %accounts = ();
    openwebmailerror(gettext('Cannot read pop3 book:') . " $pop3book")
@@ -1279,6 +1281,7 @@ sub pop3_fetches {
             }
 
             next if $disallowed;
+            next unless ow::wget::is_public_host($pop3host);
 
             my ($ret, $errmsg) = fetchmail($pop3host, $pop3port, $pop3ssl, $pop3user, $pop3passwd, $pop3del);
 
