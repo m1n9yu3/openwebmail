@@ -2162,14 +2162,16 @@ sub verify_vpath {
    openwebmailerror(gettext('The symbolic link is too complex to be accessed.'))
       if $retcode < 0;
 
+   my $rootreal = (resolv_symlink($rootpath))[1];
+
+   if (!$config{webdisk_allow_symlinkout}) {
+      openwebmailerror(gettext('The requested file or directory is outside of the webdisk system and cannot be accessed.'))
+         if fullpath2vpath($realpath, $rootreal) eq '';
+   }
+
    if (-l "$rootpath/$vpath") {
       openwebmailerror(gettext('Access to symbolic links has been disabled.'))
          unless $config{webdisk_lssymlink};
-
-      if (!$config{webdisk_allow_symlinkout}) {
-         openwebmailerror(gettext('The requested file or directory is outside of the webdisk system and cannot be accessed.'))
-            if fullpath2vpath($realpath, (resolv_symlink($rootpath))[1]) eq '';
-      }
    }
 
    my $ow_sessionsdir_vpath = fullpath2vpath($realpath, (resolv_symlink($config{ow_sessionsdir}))[1]) || '';
