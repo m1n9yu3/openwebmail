@@ -1168,7 +1168,7 @@ sub verifysession {
       my $start_url = $config{start_url};
 
       # force the start url back to SSL if needed
-      $start_url = "https://$ENV{HTTP_HOST}$start_url" if cookie('ow-ssl') && $start_url !~ m#^https?://#i;
+      $start_url = "https://" . safehttphost($ENV{HTTP_HOST}) . $start_url if cookie('ow-ssl') && $start_url !~ m#^https?://#i;
 
       my $template = HTML::Template->new(
                                            filename          => get_template('shared_sessiontimeout.tmpl'),
@@ -2035,6 +2035,30 @@ sub safedomainname {
    $domainname =~ s#[^A-Za-z\d\_\-\.]##g; # safe chars only
 
    return $domainname;
+}
+
+sub safehttphost {
+   my $host = shift || '';
+
+   $host =~ s/^\s+//;
+   $host =~ s/\s+$//;
+
+   if ($host =~ m/^\[([A-Fa-f0-9:.]+)\](?::(\d{1,5}))?$/) {
+      my $port = defined $2 && $2 <= 65535 ? ":$2" : '';
+      return "[$1]$port";
+   }
+
+   my $port = '';
+   if ($host =~ s/:(\d{1,5})$//) {
+      $port = $1 <= 65535 ? ":$1" : '';
+   }
+
+   $host =~ s#\.\.+#.#g;
+   $host =~ s#[^A-Za-z\d\.\-]##g;
+   $host =~ s#^\.+##;
+   $host =~ s#\.+$##;
+
+   return ($host ne '' ? "$host$port" : ow::tool::hostname());
 }
 
 sub safefoldername {

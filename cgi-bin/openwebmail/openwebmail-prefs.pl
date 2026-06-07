@@ -2242,7 +2242,7 @@ sub editpassword {
    my $url_chpwd = $config{ow_cgiurl};
 
    # force back to SSL
-   $url_chpwd = "https://$ENV{HTTP_HOST}$url_chpwd" if cookie("ow-ssl") && $url_chpwd !~ s#^https?://#https://#i;
+   $url_chpwd = "https://" . safehttphost($ENV{HTTP_HOST}) . $url_chpwd if cookie("ow-ssl") && $url_chpwd !~ s#^https?://#https://#i;
 
    # build the template
    my $template = HTML::Template->new(
@@ -2330,7 +2330,7 @@ sub changepassword {
    my $url_afterchpass = $config{ow_cgiurl};
    if (!$config{stay_ssl_afterlogin} && ($ENV{HTTPS} =~ m/on/i || $ENV{SERVER_PORT} == 443)) {
       # force back to http://
-      $url_afterchpass = "http://$ENV{HTTP_HOST}$url_afterchpass" if $url_afterchpass !~ s#^https?://#http://#i;
+      $url_afterchpass = "http://" . safehttphost($ENV{HTTP_HOST}) . $url_afterchpass if $url_afterchpass !~ s#^https?://#http://#i;
    }
 
    # build the template
@@ -2374,13 +2374,13 @@ sub editpassword_fail {
    my $url_afterchpass = $config{ow_cgiurl};
    if ( !$config{stay_ssl_afterlogin} && ($ENV{HTTPS} =~ m/on/i || $ENV{SERVER_PORT} == 443) ) {
       # force to http://
-      $url_afterchpass = "http://$ENV{HTTP_HOST}$url_afterchpass" if $url_afterchpass !~ s#^https?://#http://#i;
+      $url_afterchpass = "http://" . safehttphost($ENV{HTTP_HOST}) . $url_afterchpass if $url_afterchpass !~ s#^https?://#http://#i;
    }
 
    my $url_tryagain = $config{ow_cgiurl};
    if (cookie("ow-ssl") && $url_tryagain !~ s#^https?://#https://#i) {
       # force to SSL
-      $url_tryagain = "https://$ENV{HTTP_HOST}$url_tryagain";
+      $url_tryagain = "https://" . safehttphost($ENV{HTTP_HOST}) . $url_tryagain;
    }
 
    # build the template

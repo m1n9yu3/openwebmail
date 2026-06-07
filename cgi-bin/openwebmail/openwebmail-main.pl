@@ -1434,7 +1434,7 @@ sub logout {
    my $start_url = $config{start_url};
 
    if (cookie("ow-ssl")) { # backto SSL
-      $start_url = "https://$ENV{HTTP_HOST}$start_url" if ($start_url !~ s#^https?://#https://#i);
+      $start_url = "https://" . safehttphost($ENV{HTTP_HOST}) . $start_url if ($start_url !~ s#^https?://#https://#i);
    }
 
    # build the template

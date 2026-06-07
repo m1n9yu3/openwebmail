@@ -134,7 +134,7 @@ if ($config{forced_ssl_login} && !($ENV{HTTPS} =~ /on/i || $ENV{SERVER_PORT} == 
    my ($start_url, $refresh, $js) = ();
 
    $start_url = $config{start_url};
-   $start_url = "https://$ENV{HTTP_HOST}$start_url" if $start_url !~ s#^https?://#https://#i;
+   $start_url = "https://" . safehttphost($ENV{HTTP_HOST}) . $start_url if $start_url !~ s#^https?://#https://#i;
 
    my $template = HTML::Template->new(
                                         filename          => get_template("init_sslredirect.tmpl"),
@@ -584,7 +584,7 @@ sub login {
       $refreshurl = "$config{ow_cgiurl}/openwebmail-prefs.pl?action=userfirsttime&sessionid=" . ow::tool::escapeURL($thissession);
    }
    if (!$config{stay_ssl_afterlogin} && ($ENV{HTTPS} =~ /on/i || $ENV{SERVER_PORT} == 443)) {
-      $refreshurl = "http://$ENV{HTTP_HOST}$refreshurl" if ($refreshurl !~ s#^https?://#http://#i);
+      $refreshurl = "http://" . safehttphost($ENV{HTTP_HOST}) . $refreshurl if ($refreshurl !~ s#^https?://#http://#i);
    }
 
    my $prefscharset = (ow::lang::localeinfo($prefs{locale}))[4];
@@ -806,7 +806,7 @@ sub autologin {
    my $refreshurl = refreshurl_after_login(param('action'));
 
    if (!$config{stay_ssl_afterlogin} && ($ENV{HTTPS} =~ /on/i || $ENV{SERVER_PORT} == 443)) {
-      $refreshurl = "http://$ENV{HTTP_HOST}$refreshurl" if $refreshurl !~ s#^https?://#http://#i;
+      $refreshurl = "http://" . safehttphost($ENV{HTTP_HOST}) . $refreshurl if $refreshurl !~ s#^https?://#http://#i;
    }
 
    print redirect(-location => $refreshurl);
