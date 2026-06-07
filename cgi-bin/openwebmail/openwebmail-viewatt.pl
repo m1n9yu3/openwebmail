@@ -364,7 +364,7 @@ sub getattfile {
 
    # only allow to view attfiles belongs the $thissession
    openwebmailerror(gettext('Attachment file can no longer be found:') . " ($config{ow_sessionsdir}/$attfile)")
-      if $attfile !~ m/^\Q$thissession\E/ || !-f "$config{ow_sessionsdir}/$attfile";
+      if $attfile !~ m/^\Q$thissession\E-[^\/\\\x00-\x1f\x7f]+-att\d+\z/ || !-f "$config{ow_sessionsdir}/$attfile";
 
    sysopen(ATTFILE, "$config{ow_sessionsdir}/$attfile", O_RDONLY) or
       openwebmailerror(gettext('Cannot open file:') . " $config{ow_sessionsdir}/$attfile ($!)");
