@@ -1436,7 +1436,64 @@ sub extractarchive {
    chdir("$webdiskrootdir/$currentdir") or
       openwebmailerror(gettext('Cannot change to directory:') . " $currentdir ($!)");
 
-   return webdisk_execute(gettext('Extract Archive'), @cmd, "$webdiskrootdir/$vpath");
+   my %existing_unsafe_symlinks = unsafe_symlinks("$webdiskrootdir/$currentdir");
+
+   my $msg = webdisk_execute(gettext('Extract Archive'), @cmd, "$webdiskrootdir/$vpath");
+   my @removed = remove_unsafe_symlinks("$webdiskrootdir/$currentdir", \%existing_unsafe_symlinks);
+
+   if (scalar @removed > 0) {
+      my $removedlist = join(' ', map { f2u(fullpath2vpath($_, $webdiskrootdir) || $_) } @removed);
+      $msg .= "\n" . gettext('Removed unsafe symbolic link(s):') . " $removedlist";
+   }
+
+   return $msg;
+}
+
+sub remove_unsafe_symlinks {
+   my $dir = ow::tool::untaint(shift);
+   my $r_existing = shift || {};
+   my %unsafe = unsafe_symlinks($dir);
+   my @removed = ();
+
+   foreach my $path (keys %unsafe) {
+      next if exists $r_existing->{$path} && $r_existing->{$path} eq $unsafe{$path};
+
+      unlink($path);
+      push(@removed, $path);
+   }
+
+   return @removed;
+}
+
+sub unsafe_symlinks {
+   my $dir = ow::tool::untaint(shift);
+   my $rootreal = (resolv_symlink($webdiskrootdir))[1];
+   my %unsafe = ();
+
+   _unsafe_symlinks($dir, $rootreal, \%unsafe);
+   return %unsafe;
+}
+
+sub _unsafe_symlinks {
+   my ($dir, $rootreal, $r_unsafe) = @_;
+
+   opendir(my $dh, ow::tool::untaint($dir)) or return;
+   my @entries = grep { $_ ne '.' && $_ ne '..' } readdir($dh);
+   closedir($dh);
+
+   foreach my $entry (@entries) {
+      my $path = ow::tool::untaint("$dir/$entry");
+
+      if (-l $path) {
+         my ($retcode, $realpath) = resolv_symlink($path);
+         if ($retcode < 0 || fullpath2vpath($realpath, $rootreal) eq '') {
+            $r_unsafe->{$path} = $realpath;
+         }
+         next;
+      }
+
+      _unsafe_symlinks($path, $rootreal, $r_unsafe) if -d $path;
+   }
 }
 
 sub listarchive {
