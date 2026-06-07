@@ -715,7 +715,6 @@ sub is_matched {
              || ($type eq 'isnot'       && $string !~ m/^\Q$searchkeyword\E$/im)
              || ($type eq 'startswith'  && $string =~ m/^\Q$searchkeyword\E/im)
              || ($type eq 'endswith'    && $string =~ m/\Q$searchkeyword\E$/im)
-             || ($type eq 'regexp'      && $string =~ m/$searchkeyword/im && ow::tool::is_regex($searchkeyword)
+             || ($type eq 'regexp'      && ow::tool::is_safe_regex($searchkeyword) && $string =~ m/$searchkeyword/im
           ) ? 1 : 0;
 }
-

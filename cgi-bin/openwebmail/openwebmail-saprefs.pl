@@ -237,7 +237,7 @@ sub modrule {
       $rule{pattern} =~ s#\\/#/#g;  # escape internal slashes
       $rule{pattern} =~ s#/#\\/#g;  # escape internal backslashes
 
-      if ($rule{type} ne '' && $rule{pattern} ne '' && ow::tool::is_regex($rule{pattern})) {
+      if ($rule{type} ne '' && $rule{pattern} ne '' && ow::tool::is_safe_regex($rule{pattern})) {
          $rule{desc} = param('ruledescription') || '';
 
          if ($rule{type} eq 'header') {

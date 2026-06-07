@@ -574,6 +574,20 @@ sub is_regex {
                };
 }
 
+sub is_safe_regex {
+   my $teststring = shift;
+   return 0 unless is_regex($teststring);
+   return 0 if length($teststring) > 128;
+   return 0 if $teststring =~ m/[\x00-\x1F\x7F]/;
+
+   # Reject common catastrophic-backtracking shapes before applying the
+   # user-supplied regex to mail bodies, attachments, address books, or files.
+   return 0 if $teststring =~ m/(?<!\\)\([^)]*(?<!\\)(?:[*+]|\{\d+,?\d*\})[^)]*(?<!\\)\)\s*(?:[*+]|\{\d+,?\d*\})/;
+   return 0 if $teststring =~ m/(?<!\\)\([^)]*\|[^)]*(?<!\\)\)\s*(?:[*+]|\{\d+,?\d*\})/;
+
+   return 1;
+}
+
 sub zombie_cleaner {
    #
    # Note: zombie_cleaner is called at the begin/end of each request

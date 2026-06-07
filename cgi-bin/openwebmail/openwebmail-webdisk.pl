@@ -2573,7 +2573,7 @@ sub filelist_of_search {
 
          if ($wdsearchtype eq 'filename') {
             # search wdkeyword in file name
-            if (ow::tool::is_regex($wdkeyword_fs)) {
+            if (ow::tool::is_safe_regex($wdkeyword_fs)) {
                push(@{$r_list}, $fname) if $fname =~ m/$wdkeyword_fs/i;
             } else {
                push(@{$r_list}, $fname) if $fname =~ m/\Q$wdkeyword_fs\E/i;

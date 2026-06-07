@@ -545,7 +545,7 @@ sub filter_allmessageids {
 
                   $text = '' unless defined $text;
 
-                  if ($r_prefs->{regexmatch} && ow::tool::is_regex($text)) { # do regex compare?
+                  if ($r_prefs->{regexmatch} && ow::tool::is_safe_regex($text)) { # do regex compare?
                      $r_rule->{'regex.' . $attr[$_CHARSET]} = qr/$text/im;
                   } else {
                      $r_rule->{'regex.' . $attr[$_CHARSET]} = qr/\Q$text\E/im;

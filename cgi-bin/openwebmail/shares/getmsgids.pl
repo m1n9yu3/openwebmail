@@ -261,7 +261,7 @@ sub search_info_messages_for_keyword {
       ow::dbm::opendb(\%FDB, $folderdb, LOCK_SH) or return(\%found);
 
       # check if keyword a valid regex
-      $regexmatch = $regexmatch && ow::tool::is_regex($keyword);
+      $regexmatch = $regexmatch && ow::tool::is_safe_regex($keyword);
 
       my $userbrowsercharset = (ow::lang::localeinfo(ow::lang::guess_browser_locale($config{available_locales})))[4];
 

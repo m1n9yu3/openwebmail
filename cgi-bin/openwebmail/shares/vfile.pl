@@ -362,7 +362,7 @@ sub is_entry_matched {
    } elsif (ref $r_searchterm eq 'SCALAR' && ref $r_entry eq 'SCALAR') {
       return is_entry_matched(${$r_entry}, ${$r_searchterm}, $matched);
    } else {
-      if ($r_entry =~ m/\Q$r_searchterm\E/i || (ow::tool::is_regex($r_searchterm) && $r_entry =~ m/$r_searchterm/i) ) {
+      if ($r_entry =~ m/\Q$r_searchterm\E/i || (ow::tool::is_safe_regex($r_searchterm) && $r_entry =~ m/$r_searchterm/i) ) {
          $matched = 1;
       } else {
          # We negate a previous match here in case the user
