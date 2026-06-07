@@ -391,9 +391,16 @@ sub getattfile {
    $attcontent = ow::mime::decode_content($attcontent, $att{'content-transfer-encoding'});
 
    if ($wordpreview && $att{filename} =~ /\.(?:doc|dot)$/i && msword2html(\$attcontent)) {
-       # in wordpreview mode?
-       $attheader =~ s!$att{'content-type'}!text/html!;
-       $att{'content-type'} = 'text/html';
+      # in wordpreview mode?
+      $attheader =~ s!$att{'content-type'}!text/html!;
+      $att{'content-type'} = 'text/html';
+   }
+
+   if ($att{'content-type'} =~ m#^text/html#i) {
+      $attcontent = ow::htmlrender::html4nobase($attcontent);
+      $attcontent = ow::htmlrender::html4disablejs($attcontent) if $prefs{disablejs};
+      $attcontent = ow::htmlrender::html4disableembcode($attcontent) if $prefs{disableembcode};
+      $attcontent = ow::htmlrender::html4disableemblink($attcontent, $prefs{disableemblink}, "$config{ow_htmlurl}/images/backgrounds/Transparent.gif");
    }
 
    # rebuild attheader for download, disposition:inline means default to open
