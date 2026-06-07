@@ -1001,7 +1001,7 @@
               <td><b>gettext('Agents')</b><a name="AGENT"></a></td>
               <td align="right">
               <tmpl_if is_abookfolder_writable>
-              <a href="javascript:document.editForm.targetagent.value='1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="html"></tmpl_if>,<tmpl_var totalagents escape="html">'; document.editForm.submit();" onClick="return (confirm_agent_action('save') && savecheck());">gettext('add new agent')</a>
+              <a href="javascript:document.editForm.targetagent.value='1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="js"></tmpl_if>,<tmpl_var totalagents escape="js">'; document.editForm.submit();" onClick="return (confirm_agent_action('save') && savecheck());">gettext('add new agent')</a>
               <tmpl_else>
               &nbsp;
               </tmpl_if>
@@ -1024,7 +1024,7 @@
                   <tmpl_if VCARD>
                   <a href="<tmpl_var url_cgi escape="html">/openwebmail-abook.pl?action=addrviewatt&amp;sessionid=<tmpl_var sessionid escape="html">&amp;file=<tmpl_var VALUE escape="html">&amp;type=<tmpl_var filetype escape="html">" target="_new" title="gettext('download this agent')"><tmpl_if use_texticon>gettext('download this agent')<tmpl_else><img src="<tmpl_var url_html escape="none">/images/iconsets/<tmpl_var iconset escape="html">/<tmpl_var iconset_small_vcard escape="html">" class="iconset_small" alt="gettext('download this agent')"></tmpl_if></a>
                   <tmpl_if is_abookfolder_writable>
-                  &nbsp;&nbsp;<a href="javascript:document.editForm.targetagent.value='1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="html"></tmpl_if>,<tmpl_var count escape="html">'; document.editForm.submit();" onClick="return (confirm_agent_action('save') && savecheck());"><tmpl_var agentname escape="html"></a>
+                  &nbsp;&nbsp;<a href="javascript:document.editForm.targetagent.value='1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="js"></tmpl_if>,<tmpl_var count escape="js">'; document.editForm.submit();" onClick="return (confirm_agent_action('save') && savecheck());"><tmpl_var agentname escape="html"></a>
                   <tmpl_else>
                   &nbsp;&nbsp;<tmpl_var agentname escape="html">
                   </tmpl_if>
@@ -1378,7 +1378,7 @@
     <table cellpadding="0" cellspacing="0" border="0">
     <tr>
       <td>
-        <tmpl_if targetdepth><input type="submit" name="saveparent" value="gettext('save and return to parent')" accesskey="S" onclick="document.editForm.targetagent.value='-1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="html"></tmpl_if>'; return (confirm_agent_action('save') && savecheck());">&nbsp;&nbsp;</tmpl_if><tmpl_if can_save><input type="submit" name="save" value="gettext('save')" accesskey="S" onclick="return savecheck();">&nbsp;&nbsp;</tmpl_if><input type="button" name="cancel" value="gettext('cancel')" onclick="document.cancelform.submit();"><tmpl_if targetdepth>&nbsp;&nbsp;<input type="submit" name="cancelparent" value="gettext('cancel and return to parent')" accesskey="C" onclick="document.editForm.targetagent.value='-1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="html"></tmpl_if>'; confirm_agent_action('cancel');"></tmpl_if>
+        <tmpl_if targetdepth><input type="submit" name="saveparent" value="gettext('save and return to parent')" accesskey="S" onclick="document.editForm.targetagent.value='-1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="js"></tmpl_if>'; return (confirm_agent_action('save') && savecheck());">&nbsp;&nbsp;</tmpl_if><tmpl_if can_save><input type="submit" name="save" value="gettext('save')" accesskey="S" onclick="return savecheck();">&nbsp;&nbsp;</tmpl_if><input type="button" name="cancel" value="gettext('cancel')" onclick="document.cancelform.submit();"><tmpl_if targetdepth>&nbsp;&nbsp;<input type="submit" name="cancelparent" value="gettext('cancel and return to parent')" accesskey="C" onclick="document.editForm.targetagent.value='-1<tmpl_if has_targetagent>,<tmpl_var targetagentpath escape="js"></tmpl_if>'; confirm_agent_action('cancel');"></tmpl_if>
       </td>
     </tr>
     </table>
@@ -1702,4 +1702,3 @@ location.hash = '<tmpl_var jumptolastchanged escape="js">';
 </script>
 
 <tmpl_var footer_template escape="none">
-

@@ -64,6 +64,7 @@ umask(0002);
 use Fcntl qw(:DEFAULT :flock);
 use CGI 3.31 qw(-private_tempfiles :cgi charset);
 use CGI::Carp qw(fatalsToBrowser carpout);
+use constant MAX_ABOOK_TARGETAGENT_DEPTH => 32;
 
 # load OWM libraries
 require "modules/dbm.pl";
@@ -1939,7 +1940,7 @@ sub addreditform {
    # Last should only be used if traversedirection is -1
    # (so we know what card to save the form data to before we traverse to the parent)
    # targetagent can be a recursively deep map: 1,0,2,0,1
-   my ($traversedirection, @targetagent) = defined param('targetagent') ? split(/,/, param('targetagent')) : (0,());
+   my ($traversedirection, @targetagent) = parse_targetagent(param('targetagent'));
 
    # we need to pop off the last value if we're traversing up
    pop(@targetagent) if defined $traversedirection && $traversedirection == -1;
@@ -2455,7 +2456,7 @@ sub addredit {
       #################################################################
       # cancel the editing of an AGENT and move back up to the parent #
       #################################################################
-      my ($traversedirection, @targetagent) = defined param('targetagent') ? split(/,/, param('targetagent')) : (0,());
+      my ($traversedirection, @targetagent) = parse_targetagent(param('targetagent'));
       openwebmailerror(gettext('Invalid traverse direction:') . " $traversedirection") unless $traversedirection == -1;
       pop(@targetagent);
       param(-name => "targetagent", -value => scalar @targetagent ? '0,' . join(',',@targetagent) : 0);
@@ -2734,7 +2735,7 @@ sub addredit {
       }
 
       # align contact as described by the targetagent
-      my ($traversedirection, @targetagent) = defined param('targetagent') ? split(/,/, param('targetagent')) : (0,());
+      my ($traversedirection, @targetagent) = parse_targetagent(param('targetagent'));
 
       # if we're going into another agent we want to save the level above it
       pop(@targetagent) if $traversedirection == 1;
@@ -3045,6 +3046,27 @@ sub validate_importdestination {
    return if $importdestination eq 'newaddressbook';
 
    validate_writable_abookfolder($importdestination);
+}
+
+sub parse_targetagent {
+   my $targetagent = shift;
+
+   return (0, ()) unless defined $targetagent && $targetagent ne '';
+
+   my ($traversedirection, @targetagent) = split(/,/, $targetagent, -1);
+
+   openwebmailerror(gettext('Invalid traverse direction:') . " $traversedirection")
+      unless defined $traversedirection && $traversedirection =~ m/\A(?:-1|0|1)\z/;
+
+   openwebmailerror(gettext('Invalid agent path.'))
+      if scalar @targetagent > MAX_ABOOK_TARGETAGENT_DEPTH;
+
+   foreach my $agent (@targetagent) {
+      openwebmailerror(gettext('Invalid agent path.'))
+         unless defined $agent && $agent =~ m/\A\d+\z/;
+   }
+
+   return ($traversedirection, @targetagent);
 }
 
 sub validate_writable_abookfolder {
