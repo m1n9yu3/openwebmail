@@ -445,6 +445,9 @@ sub adjust_replymsg {
    my ($has_subject, $has_to, $has_precedence)=(0,0,0);
    my $inheader=1;
 
+   $from = sanitize_header_value($from);
+   $subject = sanitize_header_value($subject);
+
    foreach (split(/\n/,$msg)) {
       if ($inheader==0) {
          $body.="$_\n";
@@ -452,19 +455,19 @@ sub adjust_replymsg {
       }
       if (/^Subject: /i) {
          $has_subject=1;
-         $header.="$_\n";
+         $header.=sanitize_header_value($_)."\n";
       } elsif (/^X\-Spam\-Level\:\ \*\*\*\*\*\*/) {
          # don't reply to this spammy spam message
          log_debug("Abort message $subject due to X-Spam-Level header threshold exceeded.\n") if ($opt_d);
          exit 0; # exit success status
       } elsif (/^To: /i) {
          $has_to=1;
-         $header.="$_\n";
+         $header.=sanitize_header_value($_)."\n";
       } elsif (/^Precedence: /i) {
          $has_precedence=1;
-         $header.="$_\n";
+         $header.=sanitize_header_value($_)."\n";
       } elsif (/^[A-Za-z0-9\-]+: /i) {
-         $header.="$_\n";
+         $header.=sanitize_header_value($_)."\n";
       } else {
          $inheader=0;
          $body.="$_\n";
@@ -490,6 +493,18 @@ sub adjust_replymsg {
    # replace '$SUBJECT' token with real subject in original message
    $msg =~ s/\$SUBJECT/$subject/g;   # Sun's vacation does this
    return($msg);
+}
+
+sub sanitize_header_value {
+   my $value = shift;
+   return '' unless defined $value;
+
+   $value =~ s/[\r\n]+/ /g;
+   $value =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+//g;
+   $value =~ s/^\s+//;
+   $value =~ s/\s+$//;
+
+   return $value;
 }
 
 ########## MIME and DEBUG routines ###############################
@@ -616,4 +631,3 @@ sub log_debug {
 
    chmod(0666, "/tmp/vacation.debug");
 }
-
