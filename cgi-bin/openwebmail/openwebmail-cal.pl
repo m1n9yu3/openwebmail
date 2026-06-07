@@ -87,6 +87,8 @@ use vars qw($htmltemplatefilters $po); # defined in ow-shared.pl
 use vars qw($folder $sort $msgdatetype $page $longpage $keyword $searchtype $messageid);
 use vars qw($events $index);
 
+use constant MAX_CALENDAR_NEXTDAYS => 366;
+
 
 # BEGIN MAIN PROGRAM
 
@@ -1893,7 +1895,7 @@ sub addmod {
       my $idate = '';
       if ($dayfreq eq 'thisdayonly' && $monthfreq eq 'thismonthonly' && !$everyyear) {
          if ($thisandnextdays && $nextdays) {
-            openwebmailerror(gettext('The nextdays value must be numeric.')) if $nextdays !~ /\d+/;
+            openwebmailerror(gettext('The nextdays value must be numeric.')) unless is_safecalendarnextdays($nextdays);
             my @nextdates = map {
                                   my ($y,$m,$d) = (ow::datetime::seconds2array($time + 86400 * $_))[5,4,3];
                                   sprintf("%04d%02d%02d",$y+1900,$m+1,$d)
@@ -2081,6 +2083,15 @@ sub is_safecalendaremail {
       my $addr = (ow::tool::email2nameaddr($recipient))[1];
       return 0 if $addr eq '' || $addr =~ m/\s/ || $addr !~ m/\A[^@\s]+@[^@\s]+\z/;
    }
+
+   return 1;
+}
+
+sub is_safecalendarnextdays {
+   my $nextdays = shift;
+
+   return 0 unless defined $nextdays && $nextdays =~ m/\A\d+\z/;
+   return 0 if $nextdays > MAX_CALENDAR_NEXTDAYS;
 
    return 1;
 }
