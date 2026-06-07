@@ -123,6 +123,9 @@ sub html4disablejs {
 
    # disable inline javascript
    $html =~ s#<([^<]*?[='"\s]+)javascript:#<$1disable_javascript:#isg;
+   $html =~ s#(<[^<>]*?\s(?:href|src|action|background)\s*=\s*")([^"]*)(")#$1 . _disable_dangerous_url($2) . $3#egis;
+   $html =~ s#(<[^<>]*?\s(?:href|src|action|background)\s*=\s*')([^']*)(')#$1 . _disable_dangerous_url($2) . $3#egis;
+   $html =~ s#(<[^<>]*?\s(?:href|src|action|background)\s*=\s*)([^\s<>]+)#$1 . _disable_dangerous_url($2)#egis;
 
    # disable inline css expression javascript
    # IE 7 and earlier and IE 8 in quirks mode only
@@ -131,6 +134,16 @@ sub html4disablejs {
    $html =~ s#:\s*expression\(#:expression(return void(0);#isg;
 
    return $html;
+}
+
+sub _disable_dangerous_url {
+   my $url = shift;
+   my $decoded = $url;
+   $decoded =~ s/&#0*([0-9]+);?/chr($1)/eg;
+   $decoded =~ s/&#x0*([0-9a-f]+);?/chr(hex($1))/egi;
+   $decoded =~ s/[\x00-\x20]+//g;
+   return 'disable_javascript:void(0)' if $decoded =~ m/^javascript:/i;
+   return $url;
 }
 
 sub html4disableembcode {
