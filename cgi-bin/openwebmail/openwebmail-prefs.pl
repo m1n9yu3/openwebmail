@@ -1953,6 +1953,9 @@ sub saveprefs {
 
    # save .openwebmailrc
    my $rcfile = dotpath('openwebmailrc');
+
+   sanitize_openwebmailrcprefs(\%newprefs);
+
    sysopen(RC, $rcfile, O_WRONLY|O_TRUNC|O_CREAT) or
       openwebmailerror(gettext('Cannot open file:') . " $rcfile ($!)");
 

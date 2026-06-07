@@ -1106,6 +1106,8 @@ sub readprefs {
       }
    }
 
+   sanitize_openwebmailrcprefs(\%prefshash);
+
    # remove / and .. from variables that will be used in require statement for security
    $prefshash{locale}  =~ s#/##g;
    $prefshash{locale}  =~ s#\.\.##g;
@@ -1140,6 +1142,47 @@ sub readprefs {
      if $prefshash{abook_listviewfieldorder} !~ m#(fullname|prefix|first|middle|last|suffix|email)#;
 
    return %prefshash;
+}
+
+sub sanitize_openwebmailrcprefs {
+   my $r_prefshash = shift;
+
+   my %allowed_values = (
+                          calendar_defaultview       => [qw(calyear calmonth calweek calday callist)],
+                          calendar_monthviewnumitems => [map { "$_" } (3..10)],
+                          calendar_weekstart         => [qw(1 2 3 4 5 6 0)],
+                          calendar_starthour         => [map { sprintf("%02d00", $_) } (0..24)],
+                          calendar_endhour           => [map { sprintf("%02d00", $_) } (0..24)],
+                          calendar_interval          => [qw(5 10 15 20 30 45 60 90 120)],
+                          calendar_reminderdays      => [qw(0 1 2 3 4 5 6 7 14 21 30 60)],
+                       );
+
+   foreach my $key (keys %allowed_values) {
+      next unless exists $r_prefshash->{$key};
+      next if is_allowed_openwebmailrc_value($r_prefshash->{$key}, $allowed_values{$key});
+
+      my $default = undef;
+      foreach my $defaultkey ("DEFAULT_$key", "default_$key") {
+         if (defined $config{$defaultkey} && is_allowed_openwebmailrc_value($config{$defaultkey}, $allowed_values{$key})) {
+            $default = $config{$defaultkey};
+            last;
+         }
+      }
+
+      $r_prefshash->{$key} = defined $default ? $default : $allowed_values{$key}[0];
+   }
+}
+
+sub is_allowed_openwebmailrc_value {
+   my ($value, $r_allowed_values) = @_;
+
+   return 0 unless defined $value;
+
+   foreach my $allowed_value (@{$r_allowed_values}) {
+      return 1 if $value eq $allowed_value;
+   }
+
+   return 0;
 }
 
 sub get_template {
