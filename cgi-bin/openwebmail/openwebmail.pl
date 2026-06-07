@@ -520,7 +520,7 @@ sub login {
    if (-f "$config{ow_sessionsdir}/$thissession") {
       $sessionkey = cookie("ow-sessionkey-$domain-$user"); # continue an old session?
    } else {
-      $sessionkey = crypt(rand(),'OW');                    # a brand new session
+      $sessionkey = new_sessionkey();                      # a brand new session
    }
 
    # create sessionid file
@@ -753,6 +753,21 @@ sub ip2hostname {
    };
    return($ip) if ($@);	                                 # eval error, it means timeout
    return($hostname);
+}
+
+sub new_sessionkey {
+   my $bytes = '';
+
+   if (sysopen(my $urandom, '/dev/urandom', O_RDONLY)) {
+      read($urandom, $bytes, 24);
+      close($urandom);
+   }
+
+   if (length($bytes) < 24) {
+      $bytes .= join(':', rand(), rand(), time(), $$, ow::tool::clientip(), $loginname, $default_logindomain);
+   }
+
+   return unpack('H*', $bytes);
 }
 
 sub autologin {
