@@ -32,8 +32,8 @@ my $local_uid=getpwnam($conf{'virtualuser'}||'nobody');
 # -4 : user doesn't exist
 sub get_userinfo {
    my ($r_config, $user_domain)=@_;
-   return(-2, 'Not valid user@domain format') if ($user_domain !~ /(.+)[\@:!](.+)/);
-   my ($user, $domain)=($1, $2);
+   my ($user, $domain) = parse_vdomain_user($user_domain);
+   return(-2, 'Not valid user@domain format') if ($user eq '' || $domain eq '');
 
    my ($localuser, $uid, $gid, $realname, $homedir) = (getpwuid($local_uid))[0,2,3,6,7];
    return(-3, "Uid $local_uid doesn't exist") if ($uid eq "");
@@ -50,7 +50,7 @@ sub get_userinfo {
    }
    my $found=0;
    while (<PASSWD>) {
-      if (/^$user:/) {
+      if ((split(/:/, $_, 2))[0] eq $user) {
          $found=1; last;
       }
    }
@@ -115,8 +115,8 @@ sub get_userlist {	# only used by openwebmail-tool.pl -a
 sub check_userpassword {
    my ($r_config, $user_domain, $password)=@_;
    return (-2, "User or password is null") if ($user_domain eq '' || $password eq '');
-   return (-2, 'Not valid user@domain format') if ($user_domain !~ /(.+)[\@:!](.+)/);
-   my ($user, $domain)=($1, $2);
+   my ($user, $domain) = parse_vdomain_user($user_domain);
+   return (-2, 'Not valid user@domain format') if ($user eq '' || $domain eq '');
 
    my $pwdfile="${$r_config}{'vdomain_vmpop3_pwdpath'}/$domain/${$r_config}{'vdomain_vmpop3_pwdname'}";
    return (-4, "Passwd file $pwdfile doesn't exist") if (! -f $pwdfile);
@@ -150,8 +150,8 @@ sub check_userpassword {
 sub change_userpassword {
    my ($r_config, $user_domain, $oldpassword, $newpassword)=@_;
    return (-2, "User or password is null") if ($user_domain eq '' || $oldpassword eq '' || $newpassword eq '');
-   return (-2, 'Not valid user@domain format') if ($user_domain !~ /(.+)[\@:!](.+)/);
-   my ($user, $domain)=($1, $2);
+   my ($user, $domain) = parse_vdomain_user($user_domain);
+   return (-2, 'Not valid user@domain format') if ($user eq '' || $domain eq '');
 
    my $pwdfile="${$r_config}{'vdomain_vmpop3_pwdpath'}/$domain/${$r_config}{'vdomain_vmpop3_pwdname'}";
    return (-4, "Passwd file $pwdfile doesn't exist") if (! -f $pwdfile);
@@ -218,6 +218,16 @@ authsys_error:
 
 
 ########## misc support routine ##################################
+
+sub parse_vdomain_user {
+   my $user_domain = shift || '';
+
+   return ('', '') if ($user_domain !~ /^([A-Za-z0-9_.+-]+)[\@:!]([A-Za-z0-9_.-]+)$/);
+   my ($user, $domain) = ($1, $2);
+   return ('', '') if ($user =~ /\.\./ || $domain =~ /\.\./);
+
+   return ($user, $domain);
+}
 
 sub vdomainlist {
    my $r_config=$_[0];
