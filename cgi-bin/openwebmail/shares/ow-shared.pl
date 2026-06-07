@@ -2077,9 +2077,18 @@ sub safedlname {
    my $dlname = shift;
    $dlname =~ s|/$||;
    $dlname =~ s|^.*/||; # unix path
+   $dlname =~ s/[\r\n]+/ /g;
+   $dlname =~ s/[\x00-\x1F\x7F]+//g;
+   $dlname =~ s/["\\]/_/g;
+   $dlname =~ s/^\s+//;
+   $dlname =~ s/\s+$//;
+   $dlname = 'download' if $dlname eq '';
    if (length($dlname) > 45) { # IE6 goes crazy if fname longer than 45, tricky!
-      $dlname =~ m/^(.*)(\.[^\.]*)$/;
-      $dlname = substr($1, 0, 45-length($2)) . $2;
+      if ($dlname =~ m/^(.*)(\.[^\.]*)$/) {
+         $dlname = substr($1, 0, 45-length($2)) . $2;
+      } else {
+         $dlname = substr($dlname, 0, 45);
+      }
    }
    $dlname =~ s|_*\._*|\.|g;
    $dlname =~ s|__+|_|g;
