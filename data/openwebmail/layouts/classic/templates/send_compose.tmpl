@@ -270,7 +270,7 @@
       <td width="2"></td>
       <td class="msgbody">
         <tmpl_if is_msgformattext>
-        <textarea name="body" id="body" rows="<tmpl_var editrows escape="html">" cols="<tmpl_var editcolumns escape="html">" accesskey="M" wrap="hard"><tmpl_var body escape="none"></textarea>
+        <textarea name="body" id="body" rows="<tmpl_var editrows escape="html">" cols="<tmpl_var editcolumns escape="html">" accesskey="M" wrap="hard"><tmpl_var body escape="html"></textarea>
         <tmpl_else>
         <textarea name="body" id="body" rows="<tmpl_var editrows escape="html">" cols="<tmpl_var editcolumns escape="html">" accesskey="M" style="width: 100%;"><tmpl_var body escape="html"></textarea>
         </tmpl_if>
