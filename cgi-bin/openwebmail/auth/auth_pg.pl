@@ -32,6 +32,14 @@ my $PgPassType	= $conf{'PgPassType'};
 
 ########## end init ##############################################
 
+sub pg_quote_literal {
+   my $value = shift;
+   $value = '' unless defined $value;
+   $value =~ s/\\/\\\\/g;
+   $value =~ s/'/''/g;
+   return "'$value'";
+}
+
 #  0 : ok
 # -2 : parameter format error
 # -3 : authentication system/internal error
@@ -43,7 +51,8 @@ sub get_userinfo {
    my $DB = Pg::connectdb("host='$PgHost' port='$PgPort' dbname='$PgBase' user='$PgUser' password='$PgPass'") or
       return(-3, "PgSQL server $PgHost connect error");
    my @ret=();
-   my $q= qq/select "Uid", "Gid", "rname", "MailDir" from users where uname='$user'/;
+   my $quser = pg_quote_literal($user);
+   my $q= qq/select "Uid", "Gid", "rname", "MailDir" from users where uname=$quser/;
    Pg::doQuery($DB, $q, \@ret) or
       return(-3, "PgSQL server $PgHost query error");
    undef($DB);
@@ -88,7 +97,8 @@ sub check_userpassword {
 
    my $DB = Pg::connectdb("host='$PgHost' port='$PgPort' dbname='$PgBase' user='$PgUser' password='$PgPass'") or
       return(-3, "PgSQL server $PgHost connect error");
-   my $q="select upass from users where uname='$user'";
+   my $quser = pg_quote_literal($user);
+   my $q="select upass from users where uname=$quser";
    my @ret=();
    Pg::doQuery($DB,$q,\@ret) or
       return(-3, "PgSQL server $PgHost query error");
@@ -169,7 +179,9 @@ sub change_userpassword {
 
    my $DB = Pg::connectdb("host='$PgHost' port='$PgPort' dbname='$PgBase' user='$PgUser' password='$PgPass'") or
       return(-3, "PgSQL server $PgHost connect error");
-   $DB->exec("update users set upass='$passwd' where uname='$user'");
+   my $qpasswd = pg_quote_literal($passwd);
+   my $quser = pg_quote_literal($user);
+   $DB->exec("update users set upass=$qpasswd where uname=$quser");
       return(-3, "PgSQL server $PgHost exec error");
    undef($DB);
 
