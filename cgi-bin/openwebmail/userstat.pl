@@ -61,8 +61,18 @@ my $html=qq|<a href="_URL_" target="_blank" style="text-decoration: none">|.
          qq|<font color="_COLOR_">_TEXT_</font></a>|;
 
 $user=~s/[\/\"\'\`\|\<\>\\\(\)\[\]\{\}\$\s;&]//g; # filter out dangerous chars
-if ($user ne '' && length($user)<80) {
-   $status=`$ow_cgidir/openwebmail-tool.pl -m -e $user`;
+if ($user ne '' && length($user)<80 && $user !~ /^-/) {
+   my $pid = open(STATUS, "-|");
+   if (defined $pid) {
+      if ($pid == 0) {
+         exec("$ow_cgidir/openwebmail-tool.pl", "-m", "-e", $user);
+         exit 9;
+      } else {
+         local $/;
+         $status = <STATUS> || '';
+         close(STATUS);
+      }
+   }
 }
 if ($user eq '' or
     $status eq '' or
