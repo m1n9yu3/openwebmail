@@ -2221,14 +2221,17 @@ sub sendmessage {
    if ($do_send == 0 && $do_save == 0) {
       openwebmailerror($saveerrstr) if $saveerr;
 
+      my %params = (
+                     action      => 'listmessages',
+                     sessionid   => $thissession,
+                     sort        => $sort,
+                     msgdatetype => $msgdatetype,
+                     page        => $page,
+                     folder      => $folder,
+                   );
       print redirect(
                       -location => qq|$config{ow_cgiurl}/openwebmail-main.pl?| .
-                                   qq|action=listmessages| .
-                                   qq|&sessionid=$thissession| .
-                                   qq|&sort=$sort| .
-                                   qq|&msgdatetype=$msgdatetype| .
-                                   qq|&page=$page| .
-                                   qq|&folder=| . ow::tool::escapeURL($folder)
+                                   join('&', map { "$_=" . ow::tool::escapeURL($params{$_}) } sort keys %params)
                     );
    }
 
@@ -2796,15 +2799,18 @@ sub sendmessage {
 
          my $sentsubject = (iconv($composecharset, $prefs{charset}, $subject || gettext('(no subject)')))[0];
 
+         my %params = (
+                        action      => 'listmessages',
+                        sessionid   => $thissession,
+                        sort        => $sort,
+                        msgdatetype => $msgdatetype,
+                        page        => $page,
+                        sentsubject => $sentsubject,
+                        folder      => $folder,
+                      );
          print redirect(
                          -location => qq|$config{ow_cgiurl}/openwebmail-main.pl?| .
-                                      qq|action=listmessages| .
-                                      qq|&sessionid=$thissession| .
-                                      qq|&sort=$sort| .
-                                      qq|&msgdatetype=$msgdatetype| .
-                                      qq|&page=$page| .
-                                      qq|&sentsubject=| . ow::tool::escapeURL($sentsubject) .
-                                      qq|&folder=| . ow::tool::escapeURL($folder)
+                                      join('&', map { "$_=" . ow::tool::escapeURL($params{$_}) } sort keys %params)
                        );
       } else {
          # save draft, call getfolders to recalc used quota

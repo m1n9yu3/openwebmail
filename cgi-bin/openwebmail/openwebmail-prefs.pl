@@ -3203,8 +3203,21 @@ sub modfilter {
       my $keyword        = param('keyword') || '';
       my $headers        = param('headers') || $prefs{headers} || 'simple';
       my $attmode        = param('attmode') || 'simple';
-      my $escapedkeyword = ow::tool::escapeURL($keyword);
-      print redirect(-location=>"$config{ow_cgiurl}/openwebmail-read.pl?action=readmessage&sessionid=$thissession&page=$page&longpage=$longpage&sort=$sort&keyword=$escapedkeyword&searchtype=$searchtype&folder=$folder&message_id=$messageid&headers=$headers&attmode=$attmode");
+      my %params = (
+                     action      => 'readmessage',
+                     sessionid   => $thissession,
+                     page        => $page,
+                     longpage    => $longpage,
+                     sort        => $sort,
+                     keyword     => $keyword,
+                     searchtype  => $searchtype,
+                     folder      => $folder,
+                     message_id  => $messageid,
+                     headers     => $headers,
+                     attmode     => $attmode,
+                   );
+      print redirect(-location => "$config{ow_cgiurl}/openwebmail-read.pl?" .
+                                join('&', map { "$_=" . ow::tool::escapeURL($params{$_}) } sort keys %params));
    } else {
       editfilter();
    }
