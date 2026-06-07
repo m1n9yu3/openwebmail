@@ -1924,6 +1924,10 @@ sub viewinline {
    my $contenttype = ow::tool::ext2contenttype($vpath);
    my $length      = (-s "$webdiskrootdir/$vpath");
 
+   if ($vpath =~ m/\.(?:html?|js)$/i) {
+      $contenttype = 'text/plain';
+   }
+
    # disposition:inline default to open
    print qq|Connection: close\n|,
          qq|Content-Type: $contenttype; name="$dlname"\n|,
