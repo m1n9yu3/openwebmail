@@ -328,16 +328,21 @@ sub displaycell {
          $note .= ', ' if ($note);
          $note .= $lang_text{'forward'}
       }
-      $userdisp= " <I>- $userdisp</I>" if ($userdisp);
+      $userdisp= " <I>- " . vdomain_html($userdisp) . "</I>" if ($userdisp);
       if ($useralias ne $useredit) {
-         $useralias.=" ($useredit)";
+         $useralias = vdomain_html($useralias) . ' (' . vdomain_html($useredit) . ')';
       } else {
-         $useralias = "$useredit$userdisp";
+         $useralias = vdomain_html($useredit) . $userdisp;
       }
-      $useralias="<I>($note)</I> $useralias" if ($note);
+      $useralias="<I>(" . vdomain_html($note) . ")</I> $useralias" if ($note);
       return $useralias if ($$vusers{$useredit}=~/^%/);
-      return qq|<a href="$config{'ow_cgiurl'}/openwebmail-vdomain.pl?action=edit_vuser&amp;vuser=$useredit&amp;sessionid=$thissession&amp;view=$view| .
-                  qq|&amp;oldchklogin=$oldchklogin&amp;oldchkfwd=$oldchkfwd&amp;olddirect=$olddirect" title="$lang_text{'vdomain_changeuser'} $useredit">$useralias</a>|;
+      return qq|<a href="$config{'ow_cgiurl'}/openwebmail-vdomain.pl?action=edit_vuser&amp;vuser=| . ow::tool::escapeURL($useredit) .
+                  qq|&amp;sessionid=| . ow::tool::escapeURL($thissession) .
+                  qq|&amp;view=| . ow::tool::escapeURL($view) .
+                  qq|&amp;oldchklogin=| . ow::tool::escapeURL($oldchklogin) .
+                  qq|&amp;oldchkfwd=| . ow::tool::escapeURL($oldchkfwd) .
+                  qq|&amp;olddirect=| . ow::tool::escapeURL($olddirect) .
+                  qq|" title="| . vdomain_html("$lang_text{'vdomain_changeuser'} $useredit") . qq|">$useralias</a>|;
 }
 ########## END DISPLAYCELL #######################################
 
@@ -397,8 +402,8 @@ sub edit_vuser {
    }
 
    my $html = applystyle(readtemplate("vdomain_edituser.template"));
-   $html =~ s/\@\@\@DOMAINNAME\@\@\@/$domain/;
-   $html =~ s/\@\@\@VDOMAINTITLE\@\@\@/$title_txt/;
+   $html =~ s/\@\@\@DOMAINNAME\@\@\@/vdomain_html($domain)/e;
+   $html =~ s/\@\@\@VDOMAINTITLE\@\@\@/vdomain_html($title_txt)/e;
 
    my $temphtml = start_form(-name=>'userform',
                              -action=>"$config{'ow_cgiurl'}/openwebmail-vdomain.pl").
@@ -479,16 +484,16 @@ sub edit_vuser {
    $temphtml = '';
    my $bgcolor = $style{"tablerow_dark"};
    foreach ( sort keys %from_list ) {
-      my $key=$_;$key=~s/'/\\'/;      # escape ' for javascript
-      my $val=$from_list{$_};$val=~s/'/\\'/;
+      my $key = vdomain_js_sq($_);
+      my $val = vdomain_js_sq($from_list{$_});
       my $txt=$_;
       $txt .= " ($lang_text{'email_alias'})" if (/\@$domain$/);
       $temphtml .= qq|<tr bgcolor=$bgcolor |.
                    qq|onMouseOver='this.style.backgroundColor=$style{tablerow_hicolor};' |.
                    qq|onMouseOut='this.style.backgroundColor=$bgcolor;' |.
                    qq|>\n|.
-                   qq|<td><a href="Javascript:Update('$key','$val')">$txt</a></td>|.
-                   qq|<td>$from_list{$_}</td>|.
+                   qq|<td><a href="Javascript:Update('$key','$val')">| . vdomain_html($txt) . qq|</a></td>|.
+                   qq|<td>| . vdomain_html($from_list{$_}) . qq|</td>|.
                    qq|<td align="center">|.
                    submit(-name=>'aliasdel_button',
                           -value=>$lang_text{'delete'},
@@ -530,13 +535,32 @@ sub edit_vuser {
 
    if ($alert) {
       $html.= qq|<script language="JavaScript">\n<!--\n|.
-              qq|alert('$alert');\n|.
+              qq|alert('| . vdomain_js_sq($alert) . qq|');\n|.
               qq|//-->\n</script>\n|;
    }
 
    httpprint([], [htmlheader(), $html,  htmlfooter(2)]);
 }
 ########## END EDIT USER #########################################
+
+sub vdomain_html {
+   my $text = shift;
+   $text = '' unless defined $text;
+   return ow::htmltext::str2html($text);
+}
+
+sub vdomain_js_sq {
+   my $text = shift;
+   $text = '' unless defined $text;
+   $text =~ s/\\/\\\\/g;
+   $text =~ s/[\r\n]+/\\n/g;
+   $text =~ s/'/\\x27/g;
+   $text =~ s/"/\\x22/g;
+   $text =~ s/</\\x3c/g;
+   $text =~ s/>/\\x3e/g;
+   $text =~ s/&/\\x26/g;
+   return $text;
+}
 
 ########## CHANGE USER SETTINGS ##################################
 sub change_vuser {
