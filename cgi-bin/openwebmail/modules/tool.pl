@@ -261,13 +261,26 @@ sub ucs4_to_utf8 {
 
 sub hiddens {
    # generate html code for hidden options, faster than the one in CGI.pm
-   # limitation: no escape for keyname, value can not be an array
+   # limitation: value can not be an array
    my %h=@_;
    my ($temphtml, $key);
    foreach my $key (sort keys %h) {
-      $temphtml.=qq|<INPUT TYPE="hidden" NAME="$key" VALUE="$h{$key}">\n|;
+      my $safe_key = html_escape_attr($key);
+      my $safe_val = html_escape_attr($h{$key});
+      $temphtml.=qq|<INPUT TYPE="hidden" NAME="$safe_key" VALUE="$safe_val">\n|;
    }
    return $temphtml;
+}
+
+sub html_escape_attr {
+   my $text = shift;
+   $text = '' unless defined $text;
+   $text =~ s/&/&amp;/g;
+   $text =~ s/"/&quot;/g;
+   $text =~ s/'/&#39;/g;
+   $text =~ s/</&lt;/g;
+   $text =~ s/>/&gt;/g;
+   return $text;
 }
 
 sub zh_dospath2fname {
