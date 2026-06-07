@@ -1579,7 +1579,7 @@ sub parse_event {
       $eventtime = "#";
    }
 
-   if ($events->{$eventid}{link}) {
+   if ($events->{$eventid}{link} && is_safecalendarurl($events->{$eventid}{link})) {
       $eventlinktxt = $events->{$eventid}{link};
       $eventlink = $eventlinktxt;
       $eventlink =~ s/\%THISSESSION\%/$thissession/;
@@ -1862,7 +1862,7 @@ sub addmod {
 
       $link =~ s#\Q$thissession\E#\%THISSESSION\%#;
 
-      $link  = 0 if $link !~ m#://[^\s]+#;
+      $link  = 0 unless is_safecalendarurl($link);
       $email = 0 if $email !~ m#[^\s@]+@[^\s@]+#;
 
       # convert time format to military time.
@@ -2064,6 +2064,13 @@ sub duration_minutes {
    return $start > $end ? 0 : (($endhour * 60 + $endmin) - ($starthour * 60 + $startmin));
 }
 
+sub is_safecalendarurl {
+   my $url = shift;
+
+   return 0 unless defined $url;
+   return $url =~ m#\A(?:https?|ftp)://[^\s]+\z#i ? 1 : 0;
+}
+
 sub hourmin2str {
    # converts military time (eg:1700) to a time string (eg:05:00 pm)
    my ($hourmin, $hourformat) = @_;
@@ -2185,4 +2192,3 @@ sub lunar_string {
 #    .*,.*,((1[5-9])|(2[0-1])),Tue       The event occurs on the 3rd Tuesday, Every Month, Every Year
 #    2003,.*,.*,Wed                      The event occurs Every Wednesday, Every Week of 2003
 #    2003,.*,11,.*                       The event occurs Every 11th day, Every Month of 2003
-
