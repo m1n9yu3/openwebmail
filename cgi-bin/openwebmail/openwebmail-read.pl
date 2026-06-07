@@ -1402,7 +1402,8 @@ sub download_nontext {
                }
             }
 
-            my $tempfile = ow::tool::untaint("$tmpdir/$messagesloop->[$i]{attachment}[$n]{filename}");
+            my $filename = safe_archive_member_name($messagesloop->[$i]{attachment}[$n]{filename}, \@filelist);
+            my $tempfile = ow::tool::untaint("$tmpdir/$filename");
 
             sysopen(FILE, $tempfile, O_WRONLY|O_TRUNC|O_CREAT) or
               openwebmailerror(gettext('Cannot open file:') . " $tempfile ($!)");
@@ -1413,7 +1414,7 @@ sub download_nontext {
 
             close(FILE) or openwebmailerror(gettext('Cannot close file:') . " $tempfile ($!)");
 
-            push(@filelist, $messagesloop->[$i]{attachment}[$n]{filename});
+            push(@filelist, $filename);
          }
       }
    }
@@ -1464,6 +1465,24 @@ sub download_nontext {
    $< = $>; # drop ruid by setting ruid = euid
 
    exec(@cmd, @filelist) or openwebmailerror(gettext('Cannot execute command:') . ' ' . join(' ', @cmd, @filelist));
+}
+
+sub safe_archive_member_name {
+   my ($filename, $r_filelist) = @_;
+
+   $filename = safedlname($filename);
+   $filename =~ s/^-+/_/; # avoid zip/tar treating attachment names as options
+
+   my %used = map { $_ => 1 } @{$r_filelist};
+   if ($used{$filename}) {
+      my ($base, $ext) = $filename =~ m/^(.*?)(\.[^.]+)?$/;
+      $ext ||= '';
+
+      my $i = 1;
+      $filename = "$base-" . $i++ . $ext while $used{$filename};
+   }
+
+   return $filename;
 }
 
 sub delete_attnodes {
@@ -1573,4 +1592,3 @@ sub delete_attnodes {
 
    return readmessage();
 }
-
