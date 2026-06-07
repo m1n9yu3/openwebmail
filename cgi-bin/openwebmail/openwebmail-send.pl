@@ -1000,6 +1000,8 @@ sub compose {
 
          my $content_filename = $attr[$_SUBJECT] || gettext('forward');
          $content_filename = length $content_filename > 64 ? mbsubstr($content_filename, 0, 64, $attr[$_CHARSET]) : $content_filename;
+         $content_filename = sanitize_mail_header_value($content_filename);
+         $content_filename = gettext('forward') if $content_filename eq '';
 
          print ATTFILE qq|Content-Type: message/rfc822;\n|,
                        qq|Content-Transfer-Encoding: 8bit\n|,
@@ -1592,6 +1594,10 @@ sub add_attachment {
       param(-name => 'attlimitreached', -value => 1);
    } else {
       # store the attachment base64 encoded on disk until we're ready to send this message
+      $attachment_filename = sanitize_mail_header_value($attachment_filename);
+      $attachment_filename = gettext('attachment') if $attachment_filename eq '';
+      $attachment_contenttype = sanitize_mime_content_type($attachment_contenttype);
+
       my $attachment_serial = time();
 
       my $attachment_base64tempfile = ow::tool::untaint("$config{ow_sessionsdir}/$thissession-$attachments_uid-att$attachment_serial");
@@ -1841,6 +1847,11 @@ sub tnefatt2archive {
       $arcname = ow::mime::encode_mimewords($arcname, ('Charset'=>${$r_attachment}{charset}));
       $arcdescription = ow::mime::encode_mimewords($arcdescription, ('Charset'=>${$r_attachment}{charset}));
    }
+
+   $arcname = sanitize_mail_header_value($arcname);
+   $arcname = gettext('attachment') if $arcname eq '';
+   $arcdescription = sanitize_mail_header_value($arcdescription);
+   $arccontenttype = sanitize_mime_content_type($arccontenttype);
 
    my $attheader = qq|Content-Type: $arccontenttype;\n|.
                    qq|\tname="$arcname"\n|.
@@ -2927,6 +2938,18 @@ sub sanitize_mail_header_value {
    $value =~ s/\s+$//;
 
    return $value;
+}
+
+sub sanitize_mime_content_type {
+   my $contenttype = shift || '';
+
+   $contenttype =~ s/[\r\n]+//g;
+   $contenttype =~ s/[\x00-\x1F\x7F]+//g;
+   $contenttype =~ s/^\s+//;
+   $contenttype =~ s/\s+$//;
+
+   return $contenttype if $contenttype =~ m#^[A-Za-z0-9][A-Za-z0-9.+-]*/[A-Za-z0-9][A-Za-z0-9.+-]*(?:\s*;\s*[A-Za-z0-9_-]+=[A-Za-z0-9_.+-]+)*$#;
+   return 'application/octet-stream';
 }
 
 sub folding {
