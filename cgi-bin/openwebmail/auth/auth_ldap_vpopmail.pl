@@ -34,6 +34,28 @@ my $effectiveuser= $conf{'effective'} || 'nobody';
 
 ########## end init ##############################################
 
+sub ldap_escape_filter_value {
+   my $value = shift;
+   $value = '' unless defined $value;
+   $value =~ s/\\/\\5c/g;
+   $value =~ s/\*/\\2a/g;
+   $value =~ s/\(/\\28/g;
+   $value =~ s/\)/\\29/g;
+   $value =~ s/\x00/\\00/g;
+   return $value;
+}
+
+sub ldap_escape_dn_value {
+   my $value = shift;
+   $value = '' unless defined $value;
+   $value =~ s/\\/\\\\/g;
+   $value =~ s/([,+"<>;=])/\\$1/g;
+   $value =~ s/^ /\\ /;
+   $value =~ s/ $/\\ /;
+   $value =~ s/^#/\\#/;
+   return $value;
+}
+
 #  0 : ok
 # -2 : parameter format error
 # -3 : authentication system/internal error
@@ -46,9 +68,10 @@ sub get_userinfo {
    my $ldap = Net::LDAP->new($ldapHost) or return(-3, "LDAP error $@");
    $ldap->bind (dn=>"", password =>"") or  return(-3, "LDAP error $@");
 
+   my $filter_user = ldap_escape_filter_value($user);
    my $list = $ldap->search (
                             base    => $ldapBase,
-                            filter  => "(&(objectClass=*)(uid=$user))",
+                            filter  => "(&(objectClass=*)(uid=$filter_user))",
                             attrs   => ['uid','gid','mailMessageStore']
                             ) or return(-3, "LDAP error $@");
    undef($ldap); # disconnect
@@ -89,9 +112,10 @@ sub check_userpassword {
    # any user other than self and rootdn.)
    $ldap->bind (dn=>"", password =>"") or  return(-3, "LDAP error $@");
 
+   my $filter_user = ldap_escape_filter_value($user);
    my $list = $ldap->search (
                             base    => $ldapBase,
-                            filter  => "(&(objectClass=*)(uid=$user))",
+                            filter  => "(&(objectClass=*)(uid=$filter_user))",
                             attrs   => ['userPassword']
                             ) or return(-3, "LDAP error $@");
 
@@ -104,7 +128,8 @@ sub check_userpassword {
       $passwd_hash = crypt($password,$vpwd);
    }
 
-   my $mesg = $ldap->bind (dn => "uid=$user, $ou, $o", password => $passwd_hash);
+   my $dn_user = ldap_escape_dn_value($user);
+   my $mesg = $ldap->bind (dn => "uid=$dn_user, $ou, $o", password => $passwd_hash);
    undef($ldap);
    return (-4, 'username/password incorrect') if( $mesg->code != 0 );
 
@@ -132,9 +157,10 @@ sub change_userpassword {
    my $ldap = Net::LDAP->new($ldapHost) or return(-3, "LDAP error $@");
    $ldap->bind (dn=>"", password =>"") or  return(-3, "LDAP error $@");
 
+   my $filter_user = ldap_escape_filter_value($user);
    my $list = $ldap->search (
                             base    => $ldapBase,
-                            filter  => "(&(objectClass=*)(uid=$user))",
+                            filter  => "(&(objectClass=*)(uid=$filter_user))",
                             attrs   => ['userPassword']
                             ) or return(-3, "LDAP error $@");
 
@@ -147,9 +173,10 @@ sub change_userpassword {
       $passwd_hash = crypt($oldpassword,$vpwd);
    }
 
-   my $mesg = $ldap->bind (dn => "uid=$user, $ou, $o", password => $passwd_hash);
+   my $dn_user = ldap_escape_dn_value($user);
+   my $mesg = $ldap->bind (dn => "uid=$dn_user, $ou, $o", password => $passwd_hash);
    $mesg = $ldap->modify (
-                         dn      => "uid=$user, $ou, $o",
+                         dn      => "uid=$dn_user, $ou, $o",
                          replace => {'userPassword'=>$encrypted}
                          );
    undef($ldap);

@@ -54,6 +54,28 @@ my $pwd = $conf{password};
 
 my $ldapBase = "$dc1, $dc2";
 
+sub ldap_escape_filter_value {
+   my $value = shift;
+   $value = '' unless defined $value;
+   $value =~ s/\\/\\5c/g;
+   $value =~ s/\*/\\2a/g;
+   $value =~ s/\(/\\28/g;
+   $value =~ s/\)/\\29/g;
+   $value =~ s/\x00/\\00/g;
+   return $value;
+}
+
+sub ldap_escape_dn_value {
+   my $value = shift;
+   $value = '' unless defined $value;
+   $value =~ s/\\/\\\\/g;
+   $value =~ s/([,+"<>;=])/\\$1/g;
+   $value =~ s/^ /\\ /;
+   $value =~ s/ $/\\ /;
+   $value =~ s/^#/\\#/;
+   return $value;
+}
+
 sub get_userinfo {
    #  0 : ok
    # -2 : parameter format error
@@ -67,9 +89,10 @@ sub get_userinfo {
 
    $ldap->bind(dn=>"$cn, $dc1, $dc2", password =>$pwd) or  return(-3, "LDAP error $@");
 
+   my $filter_user = ldap_escape_filter_value($user);
    my $list = $ldap->search(
                               base    => $ldapBase,
-                              filter  => "(&(objectClass=posixAccount)(uid=$user))",
+                              filter  => "(&(objectClass=posixAccount)(uid=$filter_user))",
                               attrs   => ['uidNumber','gidNumber','gecos','homeDirectory']
                            ) or return(-3, "LDAP error $@");
 
@@ -135,8 +158,9 @@ sub check_userpassword {
    # Attempt to bind using the username and password provided.
    # (For a secure LDAP config, only auth should be allowed for
    # any user other than self and rootdn.)
+   my $dn_user = ldap_escape_dn_value($user);
    my $mesg = $ldap->bind(
-                            dn       => "uid=$user, $ou, $dc1, $dc2",
+                            dn       => "uid=$dn_user, $ou, $dc1, $dc2",
                             password => $password
                          );
 
@@ -176,8 +200,9 @@ sub change_userpassword {
    my $ldap = Net::LDAP->new($ldapHost) or return(-3, "LDAP error $@");
    $ldap->bind(dn=>"$cn, $dc1, $dc2", password =>$pwd) or return(-3, "LDAP error $@");
 
+   my $dn_user = ldap_escape_dn_value($user);
    my $mesg = $ldap->modify(
-                              dn      => "uid=$user, $ou, $dc1, $dc2",
+                              dn      => "uid=$dn_user, $ou, $dc1, $dc2",
                               replace => {'userPassword'=>$encrypted}
                            );
 
